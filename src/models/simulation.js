@@ -110,6 +110,7 @@ function find_zero_column(array) {
     return col_index;
 }
 function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe) {
+    // note inital state must be a 2d binary matrix --> make the required checks !
 
     let cols = initial_state[0].length;
     let rows = initial_state.length;
