@@ -16,9 +16,11 @@ const express = require('express');
 const app = express();
 
 const tasksRouter = require('./src/routes/tasks');
+const simulationRouter = require('.src/routes/simulation');
 
 app.use(express.json());
 app.use('/tasks', tasksRouter);
+app.use('/simulation',simulationRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

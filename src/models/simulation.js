@@ -1,16 +1,13 @@
-const vector = require('./vector') // import vector class
-const min_number_of_particles = 1.6;
-const min_neighbour = 3;
-const max_neighbour = 8;
+// const vector = require('./vector') // import vector class
 exports.falling_snow = (initial_state, steps, region_height) => {
-    let { x, y, z } = initialise_state(initial_state, steps, region_height);
+    let { x, y, z, num_particles } = initialise_state(initial_state, steps, region_height);
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z));
     return {x,y,z};
 }
 
-exports.cellula_automata = (inital_state, min_neighbour, max_neighbour,timeframe) => {
-    cellula_automata_config = cloud_dispersion(inital_state,z,min_neighbour,max_neighbour,timeframe);
+exports.cellula_automata = (initial_state, min_neighbour, max_neighbour,timeframe) => {
+    let cellula_automata_config = cloud_dispersion(initial_state,min_neighbour,max_neighbour,timeframe);
     return cellula_automata_config;
 }
 
@@ -37,14 +34,14 @@ function initialise_state(initial_state, steps, region_height) {
     // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
-            if (inital_state[i][j] === 1) {
+            if (initial_state[i][j] === 1) {
                 x[particle_index][0] = i;
                 y[particle_index][0] = j;
                 particle_index++;
             }
         }
     }
-    return { x, y, z };
+    return { x, y, z, num_particles };
 }
 
 function random_walks(num_particles, steps, x, y, z) {
@@ -91,6 +88,7 @@ function random_walks(num_particles, steps, x, y, z) {
             }
         }
     }
+    return {x, y, z}
 }
 
 function find_zero_column(array) {
@@ -123,7 +121,7 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
     const north_neighbour_index = Array.from(Array(rows), (row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
     const west_neighbour_index = Array.from(Array(cols), (col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
 
-    const south_neighbout_index = Array.from(Array(rows), (row_index) => (row_index + 1) % rows);
+    const south_neighbour_index = Array.from(Array(rows), (row_index) => (row_index + 1) % rows);
     const east_neighbour_index = Array.from(Array(cols), (col_index) => (col_index + 1) % cols);
 
     // store each configuration of the CA of shape (row,col,#configs)
@@ -140,10 +138,10 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
                 let live_neighbours =
                     // cardinal neighbours
                     initial_state[north_neighbour_index[i]][j] + initial_state[i][west_neighbour_index[j]]
-                    + initial_state[south_neighbout_index[i]][j] + initial_state[i][east_neighbour_index[j]]
+                    + initial_state[south_neighbour_index[i]][j] + initial_state[i][east_neighbour_index[j]]
                     // diagonal neighbouts
                     + initial_state[north_neighbour_index[i]][east_neighbour_index[j]] + initial_state[north_neighbour_index[i]][west_neighbour_index[j]]
-                    + initial_state[south_neighbout_index[i]][east_neighbour_index[j]] + initial_state[south_neighbout_index[i]][west_neighbour_index[j]];
+                    + initial_state[south_neighbour_index[i]][east_neighbour_index[j]] + initial_state[south_neighbour_index[i]][west_neighbour_index[j]];
 
                 // condition to survive
                 if ((live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
