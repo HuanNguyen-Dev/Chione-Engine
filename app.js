@@ -8,6 +8,7 @@
 // npm install expressdo
 // win + r, services.msc, mysql92 stop to get port 3306 free
 
+// start docker app up 
 // aws sso login
 // aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 // push and pull to ecr
