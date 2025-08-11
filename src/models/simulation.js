@@ -3,11 +3,11 @@ exports.falling_snow = (initial_state, steps, region_height) => {
     let { x, y, z, num_particles } = initialise_state(initial_state, steps, region_height);
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z));
-    return {x,y,z};
+    return { x, y, z };
 }
 
-exports.cellula_automata = (initial_state, min_neighbour, max_neighbour,timeframe) => {
-    let cellula_automata_config = cloud_dispersion(initial_state,min_neighbour,max_neighbour,timeframe);
+exports.cellula_automata = (initial_state, min_neighbour, max_neighbour, timeframe) => {
+    let cellula_automata_config = cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe);
     return cellula_automata_config;
 }
 
@@ -89,7 +89,7 @@ function random_walks(num_particles, steps, x, y, z) {
             }
         }
     }
-    return {x, y, z}
+    return { x, y, z }
 }
 
 function find_zero_column(array) {
@@ -125,7 +125,13 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
     const south_neighbour_index = Array.from(Array(rows), (row_index) => (row_index + 1) % rows);
     const east_neighbour_index = Array.from(Array(cols), (col_index) => (col_index + 1) % cols);
 
-    // store each configuration of the CA of shape (row,col,#configs)
+    // create obj for neighbourhood indexes
+    const neighbour_dir = {north: north_neighbour_index,
+        east: east_neighbour_index,
+        south: south_neighbour_index, 
+        west: west_neighbour_index};
+
+    // store each configuration of the C.A take shape in form (row,col,#configs)
     let cellula_automata_config = Array.from(Array(rows), () => Array.from((Array(cols), () => Array(timeframe).fill(0))));
 
     let tmp_state = initial_state.map(row => [...row]);
@@ -134,19 +140,11 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
         // count the number of cloud particles and their respective neighbours
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
+                // update the evolution of the state at each timestep
                 cellula_automata_config[i][j][k] = initial_state[i][j];
-
-                let live_neighbours =
-                    // cardinal neighbours
-                    initial_state[north_neighbour_index[i]][j] + initial_state[i][west_neighbour_index[j]]
-                    + initial_state[south_neighbour_index[i]][j] + initial_state[i][east_neighbour_index[j]]
-                    // diagonal neighbouts
-                    + initial_state[north_neighbour_index[i]][east_neighbour_index[j]] + initial_state[north_neighbour_index[i]][west_neighbour_index[j]]
-                    + initial_state[south_neighbour_index[i]][east_neighbour_index[j]] + initial_state[south_neighbour_index[i]][west_neighbour_index[j]];
-
+                let live_neighbours = find_number_of_neighbours(initial_state, neighbour_dir,i, j);
                 // condition to survive
-                if ((live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
-                    && (live_neighbours != max_neighbour - min_neighbour)) {
+                if (meets_survival_condition(live_neighbours,min_neighbour,max_neighbour)) {
                     tmp_state[i][j] = 1;
                 }
                 else {
@@ -159,4 +157,24 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
         tmp_state = initial_state.map(row => [...row]);
     }
     return cellula_automata_config;
+}
+
+
+function find_number_of_neighbours(initial_state, neighbour_dir, i, j) {
+    let live_neighbours = 0;
+    const {north, east, south, west} = neighbour_dir;
+    // count the number of cloud particles and their respective neighbours
+    live_neighbours =
+        // cardinal neighbours
+        initial_state[north[i]][j] + initial_state[i][west[j]]
+        + initial_state[south[i]][j] + initial_state[i][east[j]]
+        // diagonal neighbouts
+        + initial_state[north[i]][east[j]] + initial_state[north[i]][west[j]]
+        + initial_state[south[i]][east[j]] + initial_state[south[i]][west[j]];
+    return live_neighbours;
+}
+
+function meets_survival_condition(live_neighbours,min_neighbour,max_neighbour) {
+    return (live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
+        && (live_neighbours != max_neighbour - min_neighbour)
 }
