@@ -68,6 +68,7 @@ function random_walks(num_particles, steps, x, y, z) {
 
             // calculating the x-y plane displacement of each particle
             let random_displacement = Math.random();
+            // note --> no boundaries currently
             // prob left in x dir
             if (random_displacement < threshold_1) {
                 x[i][j + 1] = x[i][j] - delta;
