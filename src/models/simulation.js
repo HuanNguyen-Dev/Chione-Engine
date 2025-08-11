@@ -2,26 +2,31 @@ const vector = require('./vector') // import vector class
 const min_number_of_particles = 1.6;
 const min_neighbour = 3;
 const max_neighbour = 8;
-exports.initialise = (initial_state, steps, region_height) => {
+exports.falling_snow = (initial_state, steps, region_height) => {
     let { x, y, z } = initialise_state(initial_state, steps, region_height);
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z));
-    cellula_automata_config = cloud_dispersion(initial_state,z,min_neighbour,max_neighbour)
+    return {x,y,z};
+}
+
+exports.cellula_automata = (inital_state, min_neighbour, max_neighbour,timeframe) => {
+    cellula_automata_config = cloud_dispersion(inital_state,z,min_neighbour,max_neighbour,timeframe);
+    return cellula_automata_config;
 }
 
 // initialises the starting layer (t = 0 or column 0)
 function initialise_state(initial_state, steps, region_height) {
-    // initial state should be a binary 2d matrix, with 1 representing a cloud particle
+    // initial state should be a binary 2d matrix, with 1 representing a particle
     // e.g [[1,0,1,1],
     //       1,1,1,0]]
     const num_particles = initial_state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
-    if (num_particles < min_number_of_particles) throw new Error("Minumum number of particles must be greater than 1.6 for it to rain!");
+    // if (num_particles < min_number_of_particles) throw new Error("Minumum number of particles must be greater than 1.6 for it to rain!");
     const region_width = initial_state[0].length;
     const region_length = initial_state.length
     const region_area = region_length * region_width
     if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // kept otherwise random walks outside of boundary
 
-    // time evolution array for every particle in the system
+    // time evolution array for every particle in the system (particles,timestep)
     const x = Array.from(Array(num_particles), () => Array(steps).fill(0)) //[[],[]]
     const y = Array.from(Array(num_particles), () => Array(steps).fill(0))
     const z = Array.from(Array(num_particles), () => Array(steps).fill(region_height))
@@ -29,7 +34,7 @@ function initialise_state(initial_state, steps, region_height) {
     // keep track of particles
     let particle_index = 0;
 
-    // save the inital state into the first time column for each coordinate for each particle
+    // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
             if (inital_state[i][j] === 1) {
@@ -105,10 +110,8 @@ function find_zero_column(array) {
     }
     return col_index;
 }
-function cloud_dispersion(initial_state, z, min_neighbour, max_neighbour) {
+function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe) {
 
-    // finding where the system becomes inactive -- all cloud particles have hit the ground
-    let inactive_system_cutoff_time = find_zero_column(z);
     let cols = initial_state[0].length;
     let rows = initial_state.length;
     // set boundary for cellula automata e.g wrap around for each cardinal direction
@@ -124,11 +127,11 @@ function cloud_dispersion(initial_state, z, min_neighbour, max_neighbour) {
     const east_neighbour_index = Array.from(Array(cols), (col_index) => (col_index + 1) % cols);
 
     // store each configuration of the CA of shape (row,col,#configs)
-    let cellula_automata_config = Array.from(Array(rows), () => Array.from((Array(cols), () => Array(inactive_system_cutoff_time).fill(0))));
+    let cellula_automata_config = Array.from(Array(rows), () => Array.from((Array(cols), () => Array(timeframe).fill(0))));
 
     let tmp_state = initial_state.map(row => [...row]);
 
-    for (let k = 0; k < inactive_system_cutoff_time; k++) {
+    for (let k = 0; k < timeframe; k++) {
         // count the number of cloud particles and their respective neighbours
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
