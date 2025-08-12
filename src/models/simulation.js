@@ -32,11 +32,13 @@ function initialise_state(initial_state, steps, region_height) {
     let particle_index = 0;
 
     // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
+    // 
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
+            // record coord of particle, serperated into x and y arrays of format (particle,timestep)
             if (initial_state[i][j] === 1) {
-                x[particle_index][0] = i;
-                y[particle_index][0] = j;
+                x[particle_index][0] = j;
+                y[particle_index][0] = i;
                 particle_index++;
             }
         }
@@ -44,23 +46,14 @@ function initialise_state(initial_state, steps, region_height) {
     return { x, y, z, num_particles };
 }
 
-function random_walks(num_particles, steps, x, y,z, wind_speed, wind_dir) {
-    // random walk probabilities
-
+function calculate_thresholds(wind_dir, wind_speed) {
+    let wind_factor = calculate_windspeed_factor(wind_speed);
+    // random walk base probabilities
     let threshold_1 = 0.25; // <0.25 = left
     let threshold_2 = 0.50; // 0.25 < x < 0.5 = right
     let threshold_3 = 0.75; // 0.5 < x < 0.75 = up
-    // down otherwise
-
-    const delta = 1;
-    // since its probabilty, we want to apply the sigmoid function
-    const determine_windspeed = (wind_speed) => {
-        return 1 / (1 + Math.exp(-(wind_speed - 10)));
-    }
-    const wind_factor = determine_windspeed(wind_speed);
-    // scale down other thresholds accordingly evenly 
-    const left_over_prob = (1 - wind_factor) / 3;
-
+    // scale down other thresholds accordingly
+    let left_over_prob = (1 - wind_factor) / 3;
     switch (wind_dir) {
         case 'north':
             threshold_1 = left_over_prob;
@@ -86,8 +79,20 @@ function random_walks(num_particles, steps, x, y,z, wind_speed, wind_dir) {
             threshold_1 = 0.25; // <0.25 = left
             threshold_2 = 0.50; // 0.25 < x < 0.5 = right
             threshold_3 = 0.75; // 0.5 < x < 0.75 = up
-
     }
+    return { threshold_1, threshold_2, threshold_3 };
+}
+
+function calculate_windspeed_factor(wind_speed) {
+    // since its probabilty, we want to apply the sigmoid function to keep between 0 and 1
+    return 1 / (1 + Math.exp(-(wind_speed - 10)));
+}
+
+function random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir) {
+    const delta = 1;
+
+    let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
+
 
     for (let i = 0; i < num_particles; i++) {
         let vertical_displacement = Array.from(Array(steps), () => Math.random())
@@ -148,6 +153,28 @@ function find_zero_column(array) {
     }
     return col_index;
 }
+
+function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_neighbour) {
+    let cols = state[0].length;
+    let rows = state.length;
+    let tmp_state = state.map(row => [...row]);
+
+    // count the number of cloud particles and their respective neighbours
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            let live_neighbours = find_number_of_neighbours(state, neighbour_dir, i, j);
+            // condition to survive
+            if (meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)) {
+                tmp_state[i][j] = 1;
+            }
+            else {
+                tmp_state[i][j] = 0;
+            }
+        }
+    }
+    return tmp_state;
+}
+
 function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe) {
     // note inital state must be a 2d binary matrix --> make the required checks !
 
@@ -173,30 +200,14 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
         west: west_neighbour_index
     };
 
-    // store each configuration of the C.A take shape in form (row,col,#configs)
-    let cellula_automata_config = Array.from(Array(rows), () => Array.from((Array(cols), () => Array(timeframe).fill(0))));
-
+    // store each configuration of the C.A take shape in form (configs,row,col)
+    let cellula_automata_config = Array.from(Array(timeframe), () => Array.from((Array(rows), () => Array(cols).fill(0))));
+    // create temporary state 
     let tmp_state = initial_state.map(row => [...row]);
-
-    for (let k = 0; k < timeframe; k++) {
-        // count the number of cloud particles and their respective neighbours
-        for (let i = 0; i < rows; i++) {
-            for (let j = 0; j < cols; j++) {
-                // update the evolution of the state at each timestep
-                cellula_automata_config[i][j][k] = initial_state[i][j];
-                let live_neighbours = find_number_of_neighbours(initial_state, neighbour_dir, i, j);
-                // condition to survive
-                if (meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)) {
-                    tmp_state[i][j] = 1;
-                }
-                else {
-                    tmp_state[i][j] = 0;
-                }
-            }
-        }
-        initial_state = tmp_state;
-        // inital state now points to tmp state --> make a another independant copy
-        tmp_state = initial_state.map(row => [...row]);
+    cellula_automata_config[0] = initial_state.map(row => [...row]);
+    for (let i = 1; i < timeframe; i++) {
+        tmp_state = calculate_next_configuration(tmp_state, neighbour_dir, min_neighbour, max_neighbour);
+        cellula_automata_config[i] = tmp_state.map((rows) => [...rows]);
     }
     return cellula_automata_config;
 }
