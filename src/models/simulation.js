@@ -1,9 +1,17 @@
 // const vector = require('./vector') // import vector class
-exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir) => {
+exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) => {
+    let x_system = [], y_system = [], z_system = [];
+    const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     let { x, y, z, num_particles } = initialise_state(initial_state, steps, region_height);
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir));
 
+    // i need to figure out what to do when config dies out, how would i write this for loop. maybe it shouldnt be to steps or maybe it should
+    for (let i = 0; i < steps; i++) {
+        if (i < cloud_configurations.length) {
+            const current_cloud_configuration = cloud_configurations[i]
+        }
+    }
     // for loop to time step or length of CA configs
     // call initialize state with new inital state from CA
     // perform random walks with the new state returned from initialise_state
@@ -52,8 +60,12 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
  */
 
 exports.cellula_automata = (initial_state, min_neighbour, max_neighbour, timeframe) => {
-    let cellula_automata_config = cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe);
+    let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
     return cellula_automata_config;
+}
+
+function calculate_number_particles(state) {
+    return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
 }
 
 // initialises the starting layer (t = 0 or column 0)
@@ -61,7 +73,7 @@ function initialise_state(initial_state, steps, region_height) {
     // initial state should be a binary 2d matrix, with 1 representing a particle
     // e.g [[1,0,1,1],
     //       1,1,1,0]]
-    const num_particles = initial_state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
+    const num_particles = calculate_number_particles(initial_state)
     // if (num_particles < min_number_of_particles) throw new Error("Minumum number of particles must be greater than 1.6 for it to rain!");
     const region_width = initial_state[0].length;
     const region_length = initial_state.length
@@ -220,7 +232,7 @@ function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_n
     return tmp_state;
 }
 
-function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe) {
+function calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe) {
     // note inital state must be a 2d binary matrix --> make the required checks !
 
     let cols = initial_state[0].length;
@@ -253,6 +265,10 @@ function cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe
     for (let i = 1; i < timeframe; i++) {
         tmp_state = calculate_next_configuration(tmp_state, neighbour_dir, min_neighbour, max_neighbour);
         cellula_automata_config[i] = tmp_state.map((rows) => [...rows]);
+        if (calculate_number_particles(tmp_state) === 0) {
+            // if the configuration dies out before the timeframe ends (note .slice is not inclusive of upper bound)
+            if (i != timeframe - 1) return cellula_automata_config.slice(0, i + 1);
+        }
     }
     return cellula_automata_config;
 }
