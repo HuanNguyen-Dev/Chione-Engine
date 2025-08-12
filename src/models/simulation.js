@@ -4,7 +4,7 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir));
 
-    // for loop to time step
+    // for loop to time step or length of CA configs
     // call initialize state with new inital state from CA
     // perform random walks with the new state returned from initialise_state
     // now you will have the random walks for all configurations of the initial state based on CA
@@ -13,6 +13,43 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
     // somehow index such that the final x, y and z arrays correct accounting for prev config of particles
     return { x, y, z };
 }
+
+/**
+ * exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour, timeframe) => {
+    const ca_config = cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe);
+
+    // Final aggregated particle paths
+    let full_x = [], full_y = [], full_z = [];
+
+    for (let t = 0; t < timeframe; t++) {
+        const current_config = ca_config[t];
+
+        const { x, y, z, num_particles } = initialise_state(current_config, steps, region_height);
+
+        if (num_particles === 0) {
+            // Cloud has died out at this frame
+            continue;
+        }
+
+        const { x: particle_x, y: particle_y, z: particle_z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir);
+
+        // Append this particle group's walk to global array
+        for (let i = 0; i < steps; i++) {
+            if (!full_x[i]) {
+                full_x[i] = [];
+                full_y[i] = [];
+                full_z[i] = [];
+            }
+
+            full_x[i].push(...particle_x[i]);
+            full_y[i].push(...particle_y[i]);
+            full_z[i].push(...particle_z[i]);
+        }
+    }
+
+    return { x: full_x, y: full_y, z: full_z };
+};
+ */
 
 exports.cellula_automata = (initial_state, min_neighbour, max_neighbour, timeframe) => {
     let cellula_automata_config = cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe);
@@ -125,9 +162,9 @@ function random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir) {
                 y[i + 1][j] = y[i][j];
             }
             // prob right ( dont need to check if its >threshold 1 if the structure of if statement is kept in this order)
-            else if (random_displacement < threshold_2) { 
+            else if (random_displacement < threshold_2) {
                 x[i + 1][j] = x[i][j] + delta;
-                y[i+ 1][j] = y[i][j];
+                y[i + 1][j] = y[i][j];
             }
             // prob down in y dir
             else if (random_displacement < threshold_3) {
