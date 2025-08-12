@@ -3,6 +3,14 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
     let { x, y, z, num_particles } = initialise_state(initial_state, steps, region_height);
     // generate the time evolution arrays for the particles through random walks
     ({ x, y, z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir));
+
+    // for loop to time step
+    // call initialize state with new inital state from CA
+    // perform random walks with the new state returned from initialise_state
+    // now you will have the random walks for all configurations of the initial state based on CA
+    // include a quick check at the start to make sure the sum of the config is not zero (CA hasnt died out yet)
+    // this will simulate the cloud dying out while its still raining
+    // somehow index such that the final x, y and z arrays correct accounting for prev config of particles
     return { x, y, z };
 }
 
@@ -24,9 +32,9 @@ function initialise_state(initial_state, steps, region_height) {
     if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // kept otherwise random walks outside of boundary
 
     // time evolution array for every particle in the system (particles,timestep)
-    const x = Array.from(Array(num_particles), () => Array(steps).fill(0)) //[[],[]]
-    const y = Array.from(Array(num_particles), () => Array(steps).fill(0))
-    const z = Array.from(Array(num_particles), () => Array(steps).fill(region_height))
+    const x = Array.from(Array(steps), () => Array(num_particles).fill(0)) //[[],[]]
+    const y = Array.from(Array(steps), () => Array(num_particles).fill(0))
+    const z = Array.from(Array(steps), () => Array(num_particles).fill(region_height))
 
     // keep track of particles
     let particle_index = 0;
@@ -37,8 +45,8 @@ function initialise_state(initial_state, steps, region_height) {
         for (let j = 0; j < region_width; j++) {
             // record coord of particle, serperated into x and y arrays of format (particle,timestep)
             if (initial_state[i][j] === 1) {
-                x[particle_index][0] = j;
-                y[particle_index][0] = i;
+                x[0][particle_index] = j;
+                y[0][particle_index] = i;
                 particle_index++;
             }
         }
@@ -94,42 +102,42 @@ function random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir) {
     let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
 
 
-    for (let i = 0; i < num_particles; i++) {
-        let vertical_displacement = Array.from(Array(steps), () => Math.random())
-        for (let j = 0; j < steps - 1; j++) {
+    for (let i = 0; i < steps - 1; i++) {
+        let vertical_displacement = Array.from(Array(num_particles), () => Math.random())
+        for (let j = 0; j < num_particles; j++) {
             // check if certain particle has already hit the ground (z = 0)
             if (z[i][j] <= 0) {
                 // revert changes as previous iteration has already hit the ground
-                z[i][j + 1] = 0
-                x[i][j + 1] = x[i][j]
-                y[i][j + 1] = y[i][j]
+                z[i + 1][j] = 0
+                x[i + 1][j] = x[i][j]
+                y[i + 1][j] = y[i][j]
                 continue;
             }
             // calculating the z plane displacement of each particle 
-            z[i][j + 1] = z[i][j] - vertical_displacement[j];
+            z[i + 1][j] = z[i][j] - vertical_displacement[j];
 
             // calculating the x-y plane displacement of each particle
             let random_displacement = Math.random();
             // note --> no boundaries currently
             // prob left in x dir
             if (random_displacement < threshold_1) {
-                x[i][j + 1] = x[i][j] - delta;
-                y[i][j + 1] = y[i][j];
+                x[i + 1][j] = x[i][j] - delta;
+                y[i + 1][j] = y[i][j];
             }
-            // prob right
-            else if (random_displacement > threshold_1 && random_displacement < threshold_2) {
-                x[i][j + 1] = x[i][j] + delta;
-                y[i][j + 1] = y[i][j];
+            // prob right ( dont need to check if its >threshold 1 if the structure of if statement is kept in this order)
+            else if (random_displacement < threshold_2) { 
+                x[i + 1][j] = x[i][j] + delta;
+                y[i+ 1][j] = y[i][j];
             }
             // prob down in y dir
-            else if (random_displacement > threshold_2 && random_displacement < threshold_3) {
-                y[i][j + 1] = y[i][j] - delta;
-                x[i][j + 1] = x[i][j];
+            else if (random_displacement < threshold_3) {
+                y[i + 1][j] = y[i][j] - delta;
+                x[i + 1][j] = x[i][j];
             }
             // prob up
             else {
-                y[i][j + 1] = y[i][j] + delta;
-                x[i][j + 1] = x[i][j];
+                y[i + 1][j] = y[i][j] + delta;
+                x[i + 1][j] = x[i][j];
             }
         }
     }
