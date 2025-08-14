@@ -1,16 +1,19 @@
 // const vector = require('./vector') // import vector class
 exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) => {
-    let x_system = [], y_system = [], z_system = [];
+    let system_coordinate_history = []; // stored as [p0x0,p0y0,p0z0,p1x1,p1y1,p1z1,...,pNxN,pNyN,pNzN]
     const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
-    let { x, y, z, num_particles } = initialise_state(initial_state, steps, region_height);
-    // generate the time evolution arrays for the particles through random walks
-    ({ x, y, z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir));
 
-    // i need to figure out what to do when config dies out, how would i write this for loop. maybe it shouldnt be to steps or maybe it should
-    for (let i = 0; i < steps; i++) {
-        if (i < cloud_configurations.length) {
-            const current_cloud_configuration = cloud_configurations[i]
-        }
+    for (let i = 0; i < cloud_configurations.length; i++) {
+        let current_cloud_configuration = cloud_configurations[i];
+        let { initial_x, initial_y, initial_z, num_particles } = initialise_state(current_cloud_configuration, steps, region_height);
+
+        // generate the time evolution arrays for the particles through random walks
+        // random walks returns in format [all particles at time n, number of particles]
+        let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, steps, initial_x, initial_y, initial_z, wind_speed, wind_dir)
+        // store history of coords in format []
+        system_coordinate_history[i].push(...random_walks_x[i]);
+        system_coordinate_history[i].push(...random_walks_y[i]);
+        system_coordinate_history[i].push(...random_walks_z[i]);
     }
     // for loop to time step or length of CA configs
     // call initialize state with new inital state from CA
@@ -21,43 +24,6 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
     // somehow index such that the final x, y and z arrays correct accounting for prev config of particles
     return { x, y, z };
 }
-
-/**
- * exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour, timeframe) => {
-    const ca_config = cloud_dispersion(initial_state, min_neighbour, max_neighbour, timeframe);
-
-    // Final aggregated particle paths
-    let full_x = [], full_y = [], full_z = [];
-
-    for (let t = 0; t < timeframe; t++) {
-        const current_config = ca_config[t];
-
-        const { x, y, z, num_particles } = initialise_state(current_config, steps, region_height);
-
-        if (num_particles === 0) {
-            // Cloud has died out at this frame
-            continue;
-        }
-
-        const { x: particle_x, y: particle_y, z: particle_z } = random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir);
-
-        // Append this particle group's walk to global array
-        for (let i = 0; i < steps; i++) {
-            if (!full_x[i]) {
-                full_x[i] = [];
-                full_y[i] = [];
-                full_z[i] = [];
-            }
-
-            full_x[i].push(...particle_x[i]);
-            full_y[i].push(...particle_y[i]);
-            full_z[i].push(...particle_z[i]);
-        }
-    }
-
-    return { x: full_x, y: full_y, z: full_z };
-};
- */
 
 exports.cellula_automata = (initial_state, min_neighbour, max_neighbour, timeframe) => {
     let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
@@ -266,7 +232,7 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
         tmp_state = calculate_next_configuration(tmp_state, neighbour_dir, min_neighbour, max_neighbour);
         cellula_automata_config[i] = tmp_state.map((rows) => [...rows]);
         if (calculate_number_particles(tmp_state) === 0) {
-            // if the configuration dies out before the timeframe ends (note .slice is not inclusive of upper bound)
+            // if the configuration dies out before the timeframe ends (note .slice is not inclusive of upper bound so +1 is req.)
             if (i != timeframe - 1) return cellula_automata_config.slice(0, i + 1);
         }
     }
