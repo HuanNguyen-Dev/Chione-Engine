@@ -5,9 +5,10 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     let config_index = 0;
     // dynamically push to arrays as num_particles isnt known beforehand
     // max length of the array is the number of steps + the number of cloud configurations due to the global time offset
-    let system_coordinate_history_x = Array.from(Array(steps + cloud_configurations.length -1).fill(0).map(() => []))
-    let system_coordinate_history_y = Array.from(Array(steps + cloud_configurations.length - 1).fill(0).map(() => []))
-    let system_coordinate_history_z = Array.from(Array(steps + cloud_configurations.length - 1).fill(0).map(() => []))
+    const total_steps = steps + cloud_configurations.length - 1;
+    let system_coordinate_history_x = Array.from({length: total_steps},() => [])
+    let system_coordinate_history_y = Array.from({length: total_steps},() => [])
+    let system_coordinate_history_z = Array.from({length: total_steps},() => [])
 
     for (let i = 0; i < cloud_configurations.length; i++) {
         let current_cloud_configuration = cloud_configurations[i];
@@ -50,9 +51,9 @@ function initialise_state(initial_state, steps, region_height) {
     if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // kept otherwise random walks outside of boundary
 
     // time evolution array for every particle in the system (particles,timestep)
-    const x = Array.from(Array(steps), () => Array(num_particles).fill(0)) //[[],[]]
-    const y = Array.from(Array(steps), () => Array(num_particles).fill(0))
-    const z = Array.from(Array(steps), () => Array(num_particles).fill(region_height))
+    const initial_x = Array.from({length: steps}, () => Array(num_particles).fill(0)) //[[],[]]
+    const initial_y = Array.from({length: steps}, () => Array(num_particles).fill(0))
+    const initial_z = Array.from({length: steps}, () => Array(num_particles).fill(region_height))
 
     // keep track of particles
     let particle_index = 0;
@@ -63,13 +64,13 @@ function initialise_state(initial_state, steps, region_height) {
         for (let j = 0; j < region_width; j++) {
             // record coord of particle, serperated into x and y arrays of format (particle,timestep)
             if (initial_state[i][j] === 1) {
-                x[0][particle_index] = j;
-                y[0][particle_index] = i;
+                initial_x[0][particle_index] = j;
+                initial_y[0][particle_index] = i;
                 particle_index++;
             }
         }
     }
-    return { x, y, z, num_particles };
+    return { initial_x,initial_y,initial_z, num_particles };
 }
 
 function calculate_thresholds(wind_dir, wind_speed) {
@@ -114,52 +115,52 @@ function calculate_windspeed_factor(wind_speed) {
     return 1 / (1 + Math.exp(-(wind_speed - 10)));
 }
 
-function random_walks(num_particles, steps, x, y, z, wind_speed, wind_dir) {
+function random_walks(num_particles, steps, random_walks_x, random_walks_y, random_walks_z, wind_speed, wind_dir) {
     const delta = 1;
 
     let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
 
 
     for (let i = 0; i < steps - 1; i++) {
-        let vertical_displacement = Array.from(Array(num_particles), () => Math.random())
+        let vertical_displacement = Array.from({length: num_particles}, () => Math.random())
         for (let j = 0; j < num_particles; j++) {
             // check if certain particle has already hit the ground (z = 0)
-            if (z[i][j] <= 0) {
+            if (random_walks_z[i][j] <= 0) {
                 // revert changes as previous iteration has already hit the ground
-                z[i + 1][j] = 0
-                x[i + 1][j] = x[i][j]
-                y[i + 1][j] = y[i][j]
+                random_walks_z[i + 1][j] = 0
+                random_walks_x[i + 1][j] = random_walks_x[i][j]
+                random_walks_y[i + 1][j] = random_walks_y[i][j]
                 continue;
             }
             // calculating the z plane displacement of each particle 
-            z[i + 1][j] = z[i][j] - vertical_displacement[j];
+            random_walks_z[i + 1][j] = random_walks_z[i][j] - vertical_displacement[j];
 
             // calculating the x-y plane displacement of each particle
             let random_displacement = Math.random();
             // note --> no boundaries currently
             // prob left in x dir
             if (random_displacement < threshold_1) {
-                x[i + 1][j] = x[i][j] - delta;
-                y[i + 1][j] = y[i][j];
+                random_walks_x[i + 1][j] = random_walks_x[i][j] - delta;
+                random_walks_y[i + 1][j] = random_walks_y[i][j];
             }
             // prob right ( dont need to check if its >threshold 1 if the structure of if statement is kept in this order)
             else if (random_displacement < threshold_2) {
-                x[i + 1][j] = x[i][j] + delta;
-                y[i + 1][j] = y[i][j];
+                random_walks_x[i + 1][j] = random_walks_x[i][j] + delta;
+                random_walks_y[i + 1][j] = random_walks_y[i][j];
             }
             // prob down in y dir
             else if (random_displacement < threshold_3) {
-                y[i + 1][j] = y[i][j] - delta;
-                x[i + 1][j] = x[i][j];
+                random_walks_y[i + 1][j] = random_walks_y[i][j] - delta;
+                random_walks_x[i + 1][j] = random_walks_x[i][j];
             }
             // prob up
             else {
-                y[i + 1][j] = y[i][j] + delta;
-                x[i + 1][j] = x[i][j];
+                random_walks_y[i + 1][j] = random_walks_y[i][j] + delta;
+                random_walks_x[i + 1][j] = random_walks_x[i][j];
             }
         }
     }
-    return { x, y, z }
+    return { random_walks_x,random_walks_y, random_walks_z }
 }
 
 function find_zero_column(array) {
@@ -227,7 +228,7 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
     };
 
     // store each configuration of the C.A take shape in form (configs,row,col)
-    let cellula_automata_config = Array.from(Array(timeframe), () => Array.from((Array(rows), () => Array(cols).fill(0))));
+    let cellula_automata_config = Array.from(Array(timeframe), () => Array.from(Array(rows), () => Array(cols).fill(0)));
     // create temporary state 
     let tmp_state = initial_state.map(row => [...row]);
     cellula_automata_config[0] = initial_state.map(row => [...row]);
