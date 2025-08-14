@@ -6,6 +6,7 @@ exports.falling_snow = (req, res) => {
     try {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;
+        console.log("------------:>");
         // do required checks for valid wind speed and wind dir ---------->
         const falling_snow_coords = falling_snow(initial_state, steps, height,wind_speed, wind_dir, min_neighbour, max_neighbour);
         return res.status(200).json(falling_snow_coords)
