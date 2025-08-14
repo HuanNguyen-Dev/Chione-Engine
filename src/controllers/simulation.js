@@ -2,7 +2,7 @@ const {falling_snow, cellula_automata} = require('../models/simulation')
 
 exports.falling_snow = (req, res) => {
     const { initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour } = req.body
-    if (!initial || !state || !steps || !height) return res.status(500).json({ error: "Please enter in a valid value" })
+    if ( !initial_state || !steps || !height) return res.status(500).json({ error: "Please enter in a valid value" })
     try {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;

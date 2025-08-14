@@ -24,8 +24,6 @@ const simulationRouter = require('./src/routes/simulation');
 app.use(express.json());
 app.use('/tasks', tasksRouter);
 app.use('/simulation',simulationRouter);
-app.get("/simulation/cloud_simulation", (req, res) => {
-   res.sendFile(path.join(__dirname, "public", "cloud.html"));
-});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

@@ -1,6 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Cloud Simulation</title>
+  <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
+
 </head>
 <body>
-  <div id="cloud_simulation"></div>
+  <h2>Cloud Simulation</h2>
+
+  <!-- Optional form for user parameters -->
+  <form id="simForm">
+    Steps: <input type="number" name="steps" value="50"><br>
+    Height: <input type="number" name="height" value="10"><br>
+    Wind Speed: <input type="number" name="wind_speed" value="0"><br>
+    <button type="submit">Run Simulation</button>
+  </form>
+
+  <!-- Container for Plotly -->
+  <div id="cloudPlot" style="width: 100%; height: 600px;"></div>
+
+  <script>
+    const form = document.getElementById('simForm');
+    const plotDiv = document.getElementById('cloudPlot');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = Object.fromEntries(new FormData(form));
+      // Convert numeric inputs
+      formData.steps = Number(formData.steps);
+      formData.height = Number(formData.height);
+      formData.wind_speed = Number(formData.wind_speed);
+
+      // Fetch simulation JSON from backend
+      const res = await fetch('/simulation/falling_snow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+
+      const x = data.system_coordinate_history_x;
+      const y = data.system_coordinate_history_y;
+      const z = data.system_coordinate_history_z;
+
+      animateCloud(x, y, z);
+    });
+
+    function animateCloud(xData, yData, zData) {
+      // Prepare initial frame (timestep 0)
+      const trace = {
+        x: xData[0],
+        y: yData[0],
+        z: zData[0],
+        mode: 'markers',
+        type: 'scatter3d',
+        marker: { size: 3, color: 'blue' }
+      };
+
+      // Prepare frames for Plotly animation
+      const frames = xData.map((_, t) => ({
+        name: `frame${t}`,
+        data: [{ x: xData[t], y: yData[t], z: zData[t] }]
+      }));
+
+      Plotly.newPlot(plotDiv, [trace], {
+        margin: { l: 0, r: 0, b: 0, t: 0 },
+        scene: { xaxis:{title:'X'}, yaxis:{title:'Y'}, zaxis:{title:'Z'} }
+      }).then(() => {
+        Plotly.animate(plotDiv, frames, {
+          frame: { duration: 200, redraw: true },
+          transition: { duration: 0 },
+          mode: 'immediate'
+        });
+      });
+    }
+  </script>
 </body>
+</html>
