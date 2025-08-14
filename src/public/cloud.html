@@ -1,39 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Cloud Simulation</title>
   <script src="https://cdn.plot.ly/plotly-3.1.0.min.js" charset="utf-8"></script>
 
 </head>
+
 <body>
   <h2>Cloud Simulation</h2>
-
-  <!-- Optional form for user parameters -->
-  <form id="simForm">
+  <form id="simulation_form">
     Steps: <input type="number" name="steps" value="50"><br>
     Height: <input type="number" name="height" value="10"><br>
     Wind Speed: <input type="number" name="wind_speed" value="0"><br>
+    Wind Direction: <input type="text" name="wind_dir" value=""><br>
+    Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value=""><br>
+    Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value=""><br>
+    Initial State: <table id="table"></table>
+    <button type="button" onClick="add_row()">Add Row</button>
+    <button type="button" onClick="add_col()">Add Column</button>
     <button type="submit">Run Simulation</button>
   </form>
 
-  <!-- Container for Plotly -->
-  <div id="cloudPlot" style="width: 100%; height: 600px;"></div>
+  <div id="falling_snow_simulation" style="width: 100%; height: 600px;"></div>
 
   <script>
-    const form = document.getElementById('simForm');
-    const plotDiv = document.getElementById('cloudPlot');
+    const form = document.getElementById('simulation_form');
+    const table = document.getElementById('table');
+    const plot = document.getElementById('falling_snow_simulation');
+
+    function add_row(cols = table.rows[0]?.cells.length || 3) {
+      // set cols to num of cells in first row else default 3
+
+      const row = table.insertRow();
+      for (let i = 0; i < cols; i++) {
+        const new_cell = row.insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        new_cell.appendChild(input);
+      }
+    }
+
+    function add_col() {
+      for (let i = 0; i < table.rows.length; i++) {
+        const new_cell = table.rows[i].insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        new_cell.appendChild(input);
+      }
+    }
+
+    function initialise_table(row, col) {
+      for (let i = 0; i < row; i++) add_row(col);
+    }
+
+    initialise_table(3, 3);
+
+
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const formData = Object.fromEntries(new FormData(form));
-      // Convert numeric inputs
+      const initial_state = [];
+      for (let i = 0; i < table.rows.length; i++) {
+        const row = [];
+        for (let j = 0; j < table.rows[i].cells.length; j++) {
+          const input_state = table.rows[i].cells[j].querySelector('input').value;
+          row.push(parseInt(input_state))
+        }
+        initial_state.push(row)
+      }
+      //  initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour 
+      // create fetch response based on user input
+      formData.initial_state = initial_state;
       formData.steps = Number(formData.steps);
       formData.height = Number(formData.height);
       formData.wind_speed = Number(formData.wind_speed);
+      formData.wind_dir = formData.wind_dir;
+      formData.min_neighbour = Number(formData.min_neighbour);
+      formData.max_neighbour = Number(formData.max_neighbour);
 
-      // Fetch simulation JSON from backend
+      // call the simulation and wait for the history of the trajectory of the particles
       const res = await fetch('/simulation/falling_snow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,34 +100,41 @@
       animateCloud(x, y, z);
     });
 
-    function animateCloud(xData, yData, zData) {
+    function animateCloud(system_coord_x, system_coord_y, system_coord_z) {
       // Prepare initial frame (timestep 0)
       const trace = {
-        x: xData[0],
-        y: yData[0],
-        z: zData[0],
+        x: system_coord_x[0],
+        y: system_coord_y[0],
+        z: system_coord_z[0],
         mode: 'markers',
         type: 'scatter3d',
         marker: { size: 3, color: 'blue' }
       };
 
       // Prepare frames for Plotly animation
-      const frames = xData.map((_, t) => ({
+      const frames = system_coord_x.map((_, t) => ({
         name: `frame${t}`,
-        data: [{ x: xData[t], y: yData[t], z: zData[t] }]
+        data: [{ x: system_coord_x[t], y: system_coord_y[t], z: system_coord_z[t] }]
       }));
 
-      Plotly.newPlot(plotDiv, [trace], {
+      Plotly.newPlot(plot, [trace], {
         margin: { l: 0, r: 0, b: 0, t: 0 },
-        scene: { xaxis:{title:'X'}, yaxis:{title:'Y'}, zaxis:{title:'Z'} }
-      }).then(() => {
-        Plotly.animate(plotDiv, frames, {
-          frame: { duration: 200, redraw: true },
-          transition: { duration: 0 },
-          mode: 'immediate'
-        });
-      });
+        scene: { xaxis: { title: 'X' }, yaxis: { title: 'Y' }, zaxis: { title: 'Z' } },
+        updatemenus: [{
+          type: 'buttons',
+          showactive: false,
+          buttons: [{
+            label: 'Play',
+            method: 'animate',
+            args: [null, {
+              frame: { duration: 200, redraw: true },
+              transition: { duration: 0 }
+            }]
+          }]
+        }]
+      }, { frames });
     }
   </script>
 </body>
+
 </html>
