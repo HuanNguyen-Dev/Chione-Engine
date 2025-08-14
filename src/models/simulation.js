@@ -1,6 +1,6 @@
 // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
 // const vector = require('./vector') // import vector class
-exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) => {
+function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour){
     const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     let config_index = 0;
     // dynamically push to arrays as num_particles isnt known beforehand
@@ -28,7 +28,7 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };
 }
 
-exports.cellula_automata = (initial_state, min_neighbour, max_neighbour, timeframe) => {
+function cellula_automata (initial_state, min_neighbour, max_neighbour, timeframe){
     let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
     return cellula_automata_config;
 }
@@ -261,3 +261,7 @@ function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)
     return (live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
         && (live_neighbours != max_neighbour - min_neighbour)
 }
+
+
+exports.falling_snow = falling_snow;
+exports.cellula_automata = cellula_automata;
