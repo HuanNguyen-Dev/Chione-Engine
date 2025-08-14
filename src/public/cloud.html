@@ -13,7 +13,7 @@
   <form id="simulation_form">
     Steps: <input type="number" name="steps" value="50"><br>
     Height: <input type="number" name="height" value="10"><br>
-    Wind Speed: <input type="number" name="wind_speed" value="0"><br>
+    Wind Speed: <input type="number" name="wind_speed" value="5"><br>
     Wind Direction: <input type="text" name="wind_dir" value="north"><br>
     Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value="3"><br>
     Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value="8"><br>
@@ -92,12 +92,16 @@
       });
 
       const data = await res.json();
+      if (res.ok && data.ok) {
+        const x = data.system_coordinate_history_x;
+        const y = data.system_coordinate_history_y;
+        const z = data.system_coordinate_history_z;
 
-      const x = data.system_coordinate_history_x;
-      const y = data.system_coordinate_history_y;
-      const z = data.system_coordinate_history_z;
-
-      animateCloud(x, y, z);
+        animateCloud(x, y, z);
+      }
+      else{
+         console.error('Error JSON:', data);
+      }
     });
 
     function animateCloud(system_coord_x, system_coord_y, system_coord_z) {
