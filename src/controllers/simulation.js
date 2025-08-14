@@ -1,4 +1,4 @@
-const Simulation = require('../models/simulation');
+const {falling_snow, cellula_automata} = require('../models/simulation')
 
 exports.falling_snow = (req, res) => {
     const { initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour } = req.body
@@ -7,9 +7,10 @@ exports.falling_snow = (req, res) => {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;
         // do required checks for valid wind speed and wind dir ---------->
-        Simulation.falling_snow(initial_state, steps, height,wind_speed, wind_dir, min_neighbour, max_neighbour);
+        const falling_snow_coords = falling_snow(initial_state, steps, height,wind_speed, wind_dir, min_neighbour, max_neighbour);
+        return res.status(200).json({data: falling_snow_coords})
     } catch (error) {
-        return res.status(500).json({ error: `Something went wrong: ${error.message}` })
+        return res.status(400).json({ error: `Something went wrong: ${error.message}` })
     }
 }
 
@@ -17,8 +18,12 @@ exports.cellular_automata = (req, res) => {
     const { initial_state, min_neighbour, max_neighbour, timeframe } = req.body;
     if (!initial_state || !min_neighbour || !max_neighbour || !timeframe) return res.status(500).json({ error: "Please enter in a valid value" })
     try {
-        Simulation.cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe)
+       const cellula_automata_configs = cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe)
+       return res.status(200).json({data: cellula_automata_configs})
     } catch (error) {
-        return res.status(500).json({ error: `Something went wrong: ${error.message}` })
+        return res.status(400).json({ error: `Something went wrong: ${error.message}` })
     }
 }
+
+
+

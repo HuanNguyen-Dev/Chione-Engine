@@ -263,5 +263,7 @@ function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)
 }
 
 
-exports.falling_snow = falling_snow;
-exports.cellula_automata = cellula_automata;
+module.exports = {
+    falling_snow,
+    cellula_automata,
+}
