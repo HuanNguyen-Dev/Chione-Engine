@@ -1,7 +1,9 @@
+// scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
 // const vector = require('./vector') // import vector class
 exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) => {
-    let system_coordinate_history = []; // stored as [p0x0,p0y0,p0z0,p1x1,p1y1,p1z1,...,pNxN,pNyN,pNzN]
+    let system_coordinate_history = []; // stored as [p0x0,p0y0,p0z0,p1x1,p1y1,p1z1,...,pNxN,pNyN,pNzN] for each timestep
     const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
+    let config_index = 0;
 
     for (let i = 0; i < cloud_configurations.length; i++) {
         let current_cloud_configuration = cloud_configurations[i];
@@ -10,10 +12,14 @@ exports.falling_snow = (initial_state, steps, region_height, wind_speed, wind_di
         // generate the time evolution arrays for the particles through random walks
         // random walks returns in format [all particles at time n, number of particles]
         let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, steps, initial_x, initial_y, initial_z, wind_speed, wind_dir)
-        // store history of coords in format []
-        system_coordinate_history[i].push(...random_walks_x[i]);
-        system_coordinate_history[i].push(...random_walks_y[i]);
-        system_coordinate_history[i].push(...random_walks_z[i]);
+        // store history of coords in format [timestep -> x,y,z of each particle]
+        for (let k = 0; k < steps; k++) {
+            for (let i = 0; i < num_particles; i++) {
+                system_coordinate_history[i].push(...random_walks_x[i]); // copies ith row of random walks >> each row in random walks represents a time step
+                system_coordinate_history[i].push(...random_walks_y[i]); // but we want to store each particle contiguously at each timestep. hmm
+                system_coordinate_history[i].push(...random_walks_z[i]);
+            }
+        }
     }
     // for loop to time step or length of CA configs
     // call initialize state with new inital state from CA
