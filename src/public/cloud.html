@@ -118,6 +118,11 @@
         marker: { size: 3, color: 'blue' }
       };
 
+      // remove last frame (empty array)
+      system_coord_x.pop();
+      system_coord_y.pop();
+      system_coord_z.pop();
+
       const frames = system_coord_x.map((_, t) => ({
         name: `frame${t}`,
         data: [{
@@ -137,7 +142,16 @@
       const height = system_coord_z[0][0];
       const layout = {
         margin: { l: 0, r: 0, b: 0, t: 0 },
-        scene: { xaxis: { title: 'X', range: [min_x, max_x], autorange: false }, yaxis: { title: 'Y',range: [ min_y, max_y], autorange: false  }, zaxis: { title: 'Z',range: [-1,height], autorange: false  } },
+        scene: {
+          xaxis: { title: 'X', range: [min_x, max_x], autorange: false },
+          yaxis: { title: 'Y', range: [min_y, max_y], autorange: false },
+          zaxis: { title: 'Z', range: [-1, height], autorange: false }
+        },
+        camera: {
+          eye: { x: 1.5, y: 1.5, z: 1.5 }, // fixed view point
+          center: { x: 0, y: 0, z: 0 },
+          up: { x: 0, y: 0, z: 1 }
+        },
         updatemenus: [{
           type: 'buttons',
           showactive: false,
@@ -153,13 +167,13 @@
           }]
         }],
       };
-    
+
       const config = {
         willReadFrequently: true
       };
-      Plotly.newPlot(plot,[trace],layout,config).then(() =>{
-        Plotly.addFrames(plot,frames)
-      } )
+      Plotly.newPlot(plot, [trace], layout, config).then(() => {
+        Plotly.addFrames(plot, frames)
+      })
     }
   </script>
 </body>
