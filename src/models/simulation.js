@@ -23,6 +23,11 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
             system_coordinate_history_x[global_t].push(...random_walks_x[k]);
             system_coordinate_history_y[global_t].push(...random_walks_y[k]);
             system_coordinate_history_z[global_t].push(...random_walks_z[k]);
+            // if (find_zero_column(random_walks_z) != -1) {
+            //     system_coordinate_history_x[global_t + 1].push(...random_walks_x[k]);
+            //     system_coordinate_history_y[global_t + 1].push(...random_walks_y[k]);
+            //     system_coordinate_history_z[global_t + 1].push(...random_walks_z[k]);
+            // }
         }
         config_index++;
     }
@@ -212,11 +217,11 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
     // --> note south and east are similar but will each depend on rows and cols respectively, same with north and west
     // [0,1,2,3,4] => [4,0,1,2,3] for west
     // [0,1,2,3,4] => [1,2,3,4,0] for east
-    const north_neighbour_index = Array.from({length: rows}, (_,row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
-    const west_neighbour_index = Array.from({length: cols}, (_,col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
+    const north_neighbour_index = Array.from({ length: rows }, (_, row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
+    const west_neighbour_index = Array.from({ length: cols }, (_, col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
 
-    const south_neighbour_index = Array.from({length: rows}, (_,row_index) => (row_index + 1) % rows);
-    const east_neighbour_index = Array.from({length: cols}, (_,col_index) => (col_index + 1) % cols);
+    const south_neighbour_index = Array.from({ length: rows }, (_, row_index) => (row_index + 1) % rows);
+    const east_neighbour_index = Array.from({ length: cols }, (_, col_index) => (col_index + 1) % cols);
 
     // create obj for neighbourhood indexes
     const neighbour_dir = {
