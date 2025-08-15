@@ -5,30 +5,47 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     let config_index = 0;
     // dynamically push to arrays as num_particles isnt known beforehand
     // max length of the array is the number of steps + the number of cloud configurations due to the global time offset
-    const total_steps = steps + cloud_configurations.length - 1;
-    let system_coordinate_history_x = Array.from({ length: total_steps }, () => [])
-    let system_coordinate_history_y = Array.from({ length: total_steps }, () => [])
-    let system_coordinate_history_z = Array.from({ length: total_steps }, () => [])
+    // const total_steps = steps + cloud_configurations.length - 1;
+    let system_coordinate_history_x = []
+    let system_coordinate_history_y = []
+    let system_coordinate_history_z = []
 
-    for (let i = 0; i < cloud_configurations.length; i++) {
-        let current_cloud_configuration = cloud_configurations[i];
+    for (let config_time = 0; config_time < cloud_configurations.length; config_time++) {
+        let current_cloud_configuration = cloud_configurations[config_time];
         let { initial_x, initial_y, initial_z, num_particles } = initialise_state(current_cloud_configuration, steps, region_height);
 
         // generate the time evolution arrays for the particles through random walks
         // random walks returns in format [all particles at time n, number of particles]
-        let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, steps, initial_x, initial_y, initial_z, wind_speed, wind_dir)
+        let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, initial_x, initial_y, initial_z, wind_speed, wind_dir)
+
         // store history of coords in format [timestep,pos]
-        for (let k = 0; k < steps; k++) {
-            let global_t = config_index + k;
-            system_coordinate_history_x[global_t].push(...random_walks_x[k]);
-            system_coordinate_history_y[global_t].push(...random_walks_y[k]);
-            system_coordinate_history_z[global_t].push(...random_walks_z[k]);
-            // if (find_zero_column(random_walks_z) != -1) {
-            //     system_coordinate_history_x[global_t + 1].push(...random_walks_x[k]);
-            //     system_coordinate_history_y[global_t + 1].push(...random_walks_y[k]);
-            //     system_coordinate_history_z[global_t + 1].push(...random_walks_z[k]);
-            // }
+        for (let local_time_step = 0; local_time_step < random_walks_x.length; local_time_step++) {
+            let global_t = config_index + local_time_step;
+            if (!system_coordinate_history_x[global_t]) {
+                system_coordinate_history_x[global_t] = [];
+                system_coordinate_history_y[global_t] = [];
+                system_coordinate_history_z[global_t] = [];
+            }
+            system_coordinate_history_x[global_t].push(...random_walks_x[local_time_step]);
+            system_coordinate_history_y[global_t].push(...random_walks_y[local_time_step]);
+            system_coordinate_history_z[global_t].push(...random_walks_z[local_time_step]);
         }
+
+        let last_index = random_walks_z.length - 1;
+        let next_config_step = last_index + config_index;
+        if (!system_coordinate_history_x[next_config_step]) {
+            system_coordinate_history_x[next_config_step] = [];
+            system_coordinate_history_y[next_config_step] = [];
+            system_coordinate_history_z[next_config_step] = [];
+        }
+        for (let particle = 0; particle < num_particles; particle++) {
+            if (random_walks_z[last_index][particle] <= 0) {
+                system_coordinate_history_x[next_config_step].push(random_walks_x[last_index][particle]);
+                system_coordinate_history_y[next_config_step].push(random_walks_y[last_index][particle]);
+                system_coordinate_history_z[next_config_step].push(random_walks_z[last_index][particle]);
+            }
+        }
+
         config_index++;
     }
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };
@@ -43,7 +60,7 @@ function calculate_number_particles(state) {
     return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
 }
 
-// initialises the starting layer (t = 0 or column 0)
+// initialises the starting layer (t = 0 or column 0) --> moving from initial state into a 1d particle array at step = 0
 function initialise_state(initial_state, steps, region_height) {
     // initial state should be a binary 2d matrix, with 1 representing a particle
     // e.g [[1,0,1,1],
@@ -53,24 +70,24 @@ function initialise_state(initial_state, steps, region_height) {
     const region_width = initial_state[0].length;
     const region_length = initial_state.length
     const region_area = region_length * region_width
-    if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // kept otherwise random walks outside of boundary
+    if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // so clouds dont stay and will die
 
-    // time evolution array for every particle in the system (particles,timestep)
-    const initial_x = Array.from({ length: steps }, () => Array(num_particles).fill(0)) //[[],[]]
-    const initial_y = Array.from({ length: steps }, () => Array(num_particles).fill(0))
-    const initial_z = Array.from({ length: steps }, () => Array(num_particles).fill(region_height))
+    // time evolution array for every particle in the system
+    const initial_x = new Array(num_particle).fill(0) 
+    const initial_y = new Array(num_particles).fill(0)
+    const initial_z = new Array((num_particles).fill(region_height))
 
     // keep track of particles
     let particle_index = 0;
 
     // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
-    // 
+    // [[t0p0]...[t2p3]...[tNpN]]
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
-            // record coord of particle, serperated into x and y arrays of format (particle,timestep)
+            // record coord of particle, serperated into x and y arrays
             if (initial_state[i][j] === 1) {
-                initial_x[0][particle_index] = j;
-                initial_y[0][particle_index] = i;
+                initial_x[particle_index] = j;
+                initial_y[particle_index] = i;
                 particle_index++;
             }
         }
@@ -120,70 +137,71 @@ function calculate_windspeed_factor(wind_speed) {
     return 1 / (1 + Math.exp(-(wind_speed - 10)));
 }
 
-function random_walks(num_particles, steps, random_walks_x, random_walks_y, random_walks_z, wind_speed, wind_dir) {
+function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
     const delta = 1;
 
     let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
+    let random_walks_x = [];
+    let random_walks_y = [];
+    let random_walks_z = [];
 
+    let system_unstable = true;
+    let time_step = 0; // timestep = 0 is initial state
+    random_walks_x.push(initial_walks_x);
+    random_walks_y.push(initial_walks_y);
+    random_walks_z.push(initial_walks_z);
 
-    for (let i = 0; i < steps - 1; i++) {
+    while (system_unstable) {
+        time_step++;
+        random_walks_x[time_step] = [];
+        random_walks_y[time_step] = [];
+        random_walks_z[time_step] = [];
         let vertical_displacement = Array.from({ length: num_particles }, () => Math.random())
         for (let j = 0; j < num_particles; j++) {
             // check if certain particle has already hit the ground (z = 0)
-            if (random_walks_z[i][j] <= 0) {
+            if (random_walks_z[time_step - 1][j] <= 0) {
                 // revert changes as previous iteration has already hit the ground
-                random_walks_z[i + 1][j] = 0
-                random_walks_x[i + 1][j] = random_walks_x[i][j]
-                random_walks_y[i + 1][j] = random_walks_y[i][j]
+                random_walks_z[time_step][j] = 0
+                random_walks_x[time_step][j] = random_walks_x[time_step - 1][j]
+                random_walks_y[time_step][j] = random_walks_y[time_step - 1][j]
                 continue;
             }
             // calculating the z plane displacement of each particle 
-            random_walks_z[i + 1][j] = random_walks_z[i][j] - vertical_displacement[j];
+            random_walks_z[time_step][j] = random_walks_z[time_step - 1][j] - vertical_displacement[j];
 
             // calculating the x-y plane displacement of each particle
             let random_displacement = Math.random();
             // note --> no boundaries currently
             // prob left in x dir
             if (random_displacement < threshold_1) {
-                random_walks_x[i + 1][j] = random_walks_x[i][j] - delta;
-                random_walks_y[i + 1][j] = random_walks_y[i][j];
+                random_walks_x[time_step][j] = random_walks_x[time_step - 1][j] - delta;
+                random_walks_y[time_step][j] = random_walks_y[time_step - 1][j];
             }
             // prob right ( dont need to check if its >threshold 1 if the structure of if statement is kept in this order)
             else if (random_displacement < threshold_2) {
-                random_walks_x[i + 1][j] = random_walks_x[i][j] + delta;
-                random_walks_y[i + 1][j] = random_walks_y[i][j];
+                random_walks_x[time_step][j] = random_walks_x[time_step - 1][j] + delta;
+                random_walks_y[time_step][j] = random_walks_y[time_step - 1][j];
             }
             // prob down in y dir
             else if (random_displacement < threshold_3) {
-                random_walks_y[i + 1][j] = random_walks_y[i][j] - delta;
-                random_walks_x[i + 1][j] = random_walks_x[i][j];
+                random_walks_y[time_step][j] = random_walks_y[time_step - 1][j] - delta;
+                random_walks_x[time_step][j] = random_walks_x[time_step - 1][j];
             }
             // prob up
             else {
-                random_walks_y[i + 1][j] = random_walks_y[i][j] + delta;
-                random_walks_x[i + 1][j] = random_walks_x[i][j];
+                random_walks_y[time_step][j] = random_walks_y[time_step - 1][j] + delta;
+                random_walks_x[time_step][j] = random_walks_x[time_step - 1][j];
             }
+        }
+        if (all_particles_grounded(random_walks_z[time_step])) {
+            system_unstable = false;
         }
     }
     return { random_walks_x, random_walks_y, random_walks_z }
 }
 
-function find_zero_column(array) {
-    const cols = array[0].length;
-    const rows = array.length;
-    const sum = Array(array[0].length).fill(0);
-    let col_index = -1;
-    // finds the first column in the arrray where the sum is zero and returns the index
-    for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-            sum[i] += array[j][i];
-        }
-        if (sum[i] === 0) {
-            col_index = i;
-            break;
-        }
-    }
-    return col_index;
+function all_particles_grounded(array) {
+    return array.every(z => z <= 0);
 }
 
 function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_neighbour) {
