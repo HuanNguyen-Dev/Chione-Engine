@@ -22,6 +22,7 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     let system_coordinate_history_x = Array.from({length: total_steps}, () => []);
     let system_coordinate_history_y = Array.from({length: total_steps}, () => []);
     let system_coordinate_history_z = Array.from({length: total_steps}, () => []);
+    let landed_particles = [];
     // store each walk for each batch into the system --> note the offset required for each config
     for (let i = 0; i < batches.length; i ++){
         const {random_walks_x, random_walks_y, random_walks_z} = batches[i];
@@ -30,9 +31,22 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
             // offset by config time --> e.g config 2 starts at global step 2
             const global_step = i + steps; 
             if (global_step >= total_steps) break;
+
+            const x_step_val = [];
+            const y_step_val = [];
+            const z_step_val = [];
+            
+
             system_coordinate_history_x[global_step].push(...random_walks_x[steps]);
             system_coordinate_history_y[global_step].push(...random_walks_y[steps]);
             system_coordinate_history_z[global_step].push(...random_walks_z[steps]);
+
+            for (let j = 0; j < z_step_val.length; j++){
+                if (z_step_val[j] <= 0){
+                    landed_particles.push([x_step_val[j],[y_step_val[j],[z_step_val][j]]])
+                }
+            }
+
         }
     }
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };

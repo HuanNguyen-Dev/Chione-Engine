@@ -118,10 +118,10 @@
         marker: { size: 3, color: 'blue' }
       };
 
-      // remove last frame (empty array)
-      system_coord_x.pop();
-      system_coord_y.pop();
-      system_coord_z.pop();
+      // remove empty array
+      system_coord_x = system_coord_x.filter(item => !Array.isArray(item) || item.length > 0);
+      system_coord_y = system_coord_y.filter(item => !Array.isArray(item) || item.length > 0);
+      system_coord_z = system_coord_z.filter(item => !Array.isArray(item) || item.length > 0);
 
       const frames = system_coord_x.map((_, t) => ({
         name: `frame${t}`,
