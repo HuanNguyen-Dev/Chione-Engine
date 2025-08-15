@@ -6,6 +6,7 @@
 // npm init -y
 // npm install mariadb
 // npm install expressdo
+// npm install plotly.js
 // win + r, services.msc, mysql92 stop to get port 3306 free
 
 // start docker app up 

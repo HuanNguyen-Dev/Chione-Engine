@@ -1,15 +1,17 @@
 // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
 // const vector = require('./vector') // import vector class
-function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour){
+function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
+    console.log("in func fallligs snow");
     const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     let config_index = 0;
     // dynamically push to arrays as num_particles isnt known beforehand
     // max length of the array is the number of steps + the number of cloud configurations due to the global time offset
     const total_steps = steps + cloud_configurations.length - 1;
-    let system_coordinate_history_x = Array.from({length: total_steps},() => [])
-    let system_coordinate_history_y = Array.from({length: total_steps},() => [])
-    let system_coordinate_history_z = Array.from({length: total_steps},() => [])
+    let system_coordinate_history_x = Array.from({ length: total_steps }, () => [])
+    let system_coordinate_history_y = Array.from({ length: total_steps }, () => [])
+    let system_coordinate_history_z = Array.from({ length: total_steps }, () => [])
 
+    console.log("before cloud configs");
     for (let i = 0; i < cloud_configurations.length; i++) {
         let current_cloud_configuration = cloud_configurations[i];
         let { initial_x, initial_y, initial_z, num_particles } = initialise_state(current_cloud_configuration, steps, region_height);
@@ -18,10 +20,11 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
         // random walks returns in format [all particles at time n, number of particles]
         let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, steps, initial_x, initial_y, initial_z, wind_speed, wind_dir)
         // store history of coords in format [timestep,pos]
+        console.log("just before setting global system");
         for (let k = 0; k < steps; k++) {
             let global_t = config_index + k;
-            system_coordinate_history_x[global_t].push(...random_walks_x[k]); 
-            system_coordinate_history_y[global_t].push(...random_walks_y[k]); 
+            system_coordinate_history_x[global_t].push(...random_walks_x[k]);
+            system_coordinate_history_y[global_t].push(...random_walks_y[k]);
             system_coordinate_history_z[global_t].push(...random_walks_z[k]);
         }
         config_index++;
@@ -29,7 +32,7 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };
 }
 
-function cellula_automata (initial_state, min_neighbour, max_neighbour, timeframe){
+function cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe) {
     let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
     return cellula_automata_config;
 }
@@ -51,9 +54,9 @@ function initialise_state(initial_state, steps, region_height) {
     if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // kept otherwise random walks outside of boundary
 
     // time evolution array for every particle in the system (particles,timestep)
-    const initial_x = Array.from({length: steps}, () => Array(num_particles).fill(0)) //[[],[]]
-    const initial_y = Array.from({length: steps}, () => Array(num_particles).fill(0))
-    const initial_z = Array.from({length: steps}, () => Array(num_particles).fill(region_height))
+    const initial_x = Array.from({ length: steps }, () => Array(num_particles).fill(0)) //[[],[]]
+    const initial_y = Array.from({ length: steps }, () => Array(num_particles).fill(0))
+    const initial_z = Array.from({ length: steps }, () => Array(num_particles).fill(region_height))
 
     // keep track of particles
     let particle_index = 0;
@@ -70,7 +73,7 @@ function initialise_state(initial_state, steps, region_height) {
             }
         }
     }
-    return { initial_x,initial_y,initial_z, num_particles };
+    return { initial_x, initial_y, initial_z, num_particles };
 }
 
 function calculate_thresholds(wind_dir, wind_speed) {
@@ -122,7 +125,7 @@ function random_walks(num_particles, steps, random_walks_x, random_walks_y, rand
 
 
     for (let i = 0; i < steps - 1; i++) {
-        let vertical_displacement = Array.from({length: num_particles}, () => Math.random())
+        let vertical_displacement = Array.from({ length: num_particles }, () => Math.random())
         for (let j = 0; j < num_particles; j++) {
             // check if certain particle has already hit the ground (z = 0)
             if (random_walks_z[i][j] <= 0) {
@@ -160,7 +163,7 @@ function random_walks(num_particles, steps, random_walks_x, random_walks_y, rand
             }
         }
     }
-    return { random_walks_x,random_walks_y, random_walks_z }
+    return { random_walks_x, random_walks_y, random_walks_z }
 }
 
 function find_zero_column(array) {
@@ -182,6 +185,7 @@ function find_zero_column(array) {
 }
 
 function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_neighbour) {
+    console.log("calc next config");
     let cols = state[0].length;
     let rows = state.length;
     let tmp_state = state.map(row => [...row]);
@@ -204,7 +208,7 @@ function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_n
 
 function calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe) {
     // note inital state must be a 2d binary matrix --> make the required checks !
-
+    console.log("inside calc cloud config");
     let cols = initial_state[0].length;
     let rows = initial_state.length;
     // set boundary for cellula automata e.g wrap around for each cardinal direction
@@ -213,11 +217,11 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
     // --> note south and east are similar but will each depend on rows and cols respectively, same with north and west
     // [0,1,2,3,4] => [4,0,1,2,3] for west
     // [0,1,2,3,4] => [1,2,3,4,0] for east
-    const north_neighbour_index = Array.from(Array(rows), (row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
-    const west_neighbour_index = Array.from(Array(cols), (col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
+    const north_neighbour_index = Array.from({length: rows}, (_,row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
+    const west_neighbour_index = Array.from({length: cols}, (_,col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
 
-    const south_neighbour_index = Array.from(Array(rows), (row_index) => (row_index + 1) % rows);
-    const east_neighbour_index = Array.from(Array(cols), (col_index) => (col_index + 1) % cols);
+    const south_neighbour_index = Array.from({length: rows}, (_,row_index) => (row_index + 1) % rows);
+    const east_neighbour_index = Array.from({length: cols}, (_,col_index) => (col_index + 1) % cols);
 
     // create obj for neighbourhood indexes
     const neighbour_dir = {
