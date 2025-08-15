@@ -1,7 +1,6 @@
 // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
 // const vector = require('./vector') // import vector class
 function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
-    console.log("in func fallligs snow");
     const cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     let config_index = 0;
     // dynamically push to arrays as num_particles isnt known beforehand
@@ -11,7 +10,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     let system_coordinate_history_y = Array.from({ length: total_steps }, () => [])
     let system_coordinate_history_z = Array.from({ length: total_steps }, () => [])
 
-    console.log("before cloud configs");
     for (let i = 0; i < cloud_configurations.length; i++) {
         let current_cloud_configuration = cloud_configurations[i];
         let { initial_x, initial_y, initial_z, num_particles } = initialise_state(current_cloud_configuration, steps, region_height);
@@ -20,7 +18,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
         // random walks returns in format [all particles at time n, number of particles]
         let { random_walks_x, random_walks_y, random_walks_z } = random_walks(num_particles, steps, initial_x, initial_y, initial_z, wind_speed, wind_dir)
         // store history of coords in format [timestep,pos]
-        console.log("just before setting global system");
         for (let k = 0; k < steps; k++) {
             let global_t = config_index + k;
             system_coordinate_history_x[global_t].push(...random_walks_x[k]);
@@ -185,7 +182,6 @@ function find_zero_column(array) {
 }
 
 function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_neighbour) {
-    console.log("calc next config");
     let cols = state[0].length;
     let rows = state.length;
     let tmp_state = state.map(row => [...row]);
@@ -208,7 +204,6 @@ function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_n
 
 function calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe) {
     // note inital state must be a 2d binary matrix --> make the required checks !
-    console.log("inside calc cloud config");
     let cols = initial_state[0].length;
     let rows = initial_state.length;
     // set boundary for cellula automata e.g wrap around for each cardinal direction
