@@ -115,7 +115,7 @@
         z: system_coord_z[0],
         mode: 'markers',
         type: 'scatter3d',
-        marker: { size: 3, color: 'blue' }
+        marker: { size: 3, color: 'blue', opacity: 0.6 }
       };
 
       // remove empty array
@@ -131,14 +131,14 @@
           z: system_coord_z[t],
           mode: 'markers',
           type: 'scatter3d',
-          marker: { size: 3, color: 'blue' }
+          marker: { size: 3, color: 'blue', opacity: 0.6 }
         }]
       }));
-      const max_x = Math.max(...system_coord_x.flat());
-      const min_x = Math.min(...system_coord_x.flat());
+      const max_x = Math.max(...system_coord_x.flat(Infinity));
+      const min_x = Math.min(...system_coord_x.flat(Infinity));
 
-      const max_y = Math.max(...system_coord_y.flat());
-      const min_y = Math.min(...system_coord_y.flat());
+      const max_y = Math.max(...system_coord_y.flat(Infinity));
+      const min_y = Math.min(...system_coord_y.flat(Infinity));
       const height = system_coord_z[0][0];
       const layout = {
         margin: { l: 0, r: 0, b: 0, t: 0 },
