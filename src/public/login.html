@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+
+
+
+</head>
+
+<body>
+    <h2>Login</h2>
+    <form id="login">
+        Username: <input type="text" name="username" value="Doe@example.com"><br>
+        Password: <input type="password" name="password" value="Passsword"><br>
+        <button type="submit" onClick="login()">Login</button>
+    </form>
+
+    <script>
+        async function handle_login(username, password) {
+            if (username && password) {
+                const user_data = { username, password }
+                try {
+                    const response = await fetch('/user/login', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(user_data)
+                    });
+                    if (!response.ok) {
+                        return -1;
+                    }
+                    const data = await response.json();
+                    // localStorage.setItem('authToken', data.authToken);
+                    return data;
+                } catch {
+                    return -1;
+                }
+            }
+            else return -1;
+        }
+
+        const form = document.getElementById('login');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = form.username.value;
+            const password = form.password.value;
+            const res = await handle_login(username, password)
+
+            if (res !== -1) {
+                if (res.ok) {
+                    console.log('Login successful:', res);
+                    // store auth
+                } else {
+                    console.error('Login error:', res.error);
+                }
+            } else {
+                console.error('Login failed:' + res.error);
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>
