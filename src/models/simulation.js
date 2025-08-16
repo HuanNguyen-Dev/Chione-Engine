@@ -2,23 +2,25 @@
 // const vector = require('./vector') // import vector class
 function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
     let cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
-    console.log(cloud_configurations.length);
     // remove configurations that are dead, otherwise it will perform random walks on particles at (0,0,0)
-    for (let i = 0; i < cloud_configurations.length; i++){
-        if (is_empty_configuration(cloud_configurations[i])){
+    for (let i = 0; i < cloud_configurations.length; i++) {
+        if (is_empty_configuration(cloud_configurations[i])) {
             if (i === 0) throw new Error("Must have at least 1 cloud particle!");
-            cloud_configurations = cloud_configurations.slice(0,i);
+            cloud_configurations = cloud_configurations.slice(0, i);
             break;
         }
     }
 
     const batches = [];
+    // const batch_particle_ids = [];
+    // let particle_counter = 0;
     let max_steps = 0;
-    console.log(cloud_configurations.length)
 
     // for each configuration, compute the random walks of each state / cloud config
     for (let i = 0; i < cloud_configurations.length; i++) {
         let { initial_x, initial_y, initial_z, num_particles } = initialise_state(cloud_configurations[i], region_height);
+        // const ids = Array.from({ length: num_particles }, () => particle_counter++);
+        // batch_particle_ids.push(ids);
 
         // generate the time evolution arrays for the particles through random walks
         // random walks returns in format {random walks for x,y,z} with each coordinate structured as:
@@ -37,16 +39,14 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     let system_coordinate_history_x = Array.from({ length: total_steps }, () => []);
     let system_coordinate_history_y = Array.from({ length: total_steps }, () => []);
     let system_coordinate_history_z = Array.from({ length: total_steps }, () => []);
-    let landed_particles = [];
-    const ground_appended_for_step = new Set();
+
     // store each walk for each batch into the system --> note the offset required for each config as explained above
     for (let i = 0; i < batches.length; i++) {
+        const landed_particles_map = new Map();
         // if (is_empty_configuration(batches[i]))continue;
         const { random_walks_x, random_walks_y, random_walks_z } = batches[i];
+        // const ids = batch_particle_ids[i];
         const local_steps_for_config = random_walks_x.length;
-
-        // indexing flag for landed particles
-        const landed_flags = new Array(random_walks_z[0].length).fill(false);
 
         // add random walks of each config into the global system coords history
         for (let step = 0; step < local_steps_for_config; step++) {
@@ -54,41 +54,32 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
             const global_step = i + step;
             if (global_step >= total_steps) break;
 
-            const x_vals = random_walks_x[step];
-            const y_vals = random_walks_y[step];
-            const z_vals = random_walks_z[step];
-
-            let num_particles = z_vals.length;
+            let num_particles = random_walks_z[step].length;
             // find if particle is falling or has reached ground
             for (let particle = 0; particle < num_particles; particle++) {
-                const x = x_vals[particle];
-                const y = y_vals[particle];
-                const z = z_vals[particle];
+                const x = random_walks_x[step][particle];
+                const y = random_walks_y[step][particle];
+                const z = random_walks_z[step][particle];
+                // const particle_id = ids[particle];
 
-                if (z > 0) {
-                    system_coordinate_history_x[global_step].push(x);
-                    system_coordinate_history_y[global_step].push(y);
-                    system_coordinate_history_z[global_step].push(z);
+                system_coordinate_history_x[global_step].push(x);
+                system_coordinate_history_y[global_step].push(y);
+                // prevent reaching below ground
+                if (z <= 0) {
+                    system_coordinate_history_z[global_step].push(0);
                 }
                 else {
-                    if (!landed_flags[particle]){
-                        // edge case if z reaches 0 at step 0
-                        const prev_z = step > 0 ? random_walks_z[step - 1][particle] : Infinity; 
-                        if (prev_z > 0){
-                            landed_particles.push([x,y,0]);
-                        }
-                        landed_flags[particle] = true;
-                    }
-                }
-            }
-            // add all landed particles to system ONCE per step
-            if (!ground_appended_for_step.has(global_step) && landed_particles.length){
-                for (const [x,y,z] of landed_particles){
-                    system_coordinate_history_x[global_step].push(x);
-                    system_coordinate_history_y[global_step].push(y);
                     system_coordinate_history_z[global_step].push(z);
                 }
-                ground_appended_for_step.add(global_step); // update flag
+            }
+            // last step indicate particles have hit the ground
+            // store those particles across all itimesteps of the system for continuity
+            if (step === local_steps_for_config - 1) {
+                for (let future_steps = global_step; future_steps < total_steps; future_steps++) {
+                    system_coordinate_history_x[future_steps].push(...random_walks_x[local_steps_for_config - 1]);
+                    system_coordinate_history_y[future_steps].push(...random_walks_y[local_steps_for_config - 1]);
+                    system_coordinate_history_z[future_steps].push(...random_walks_z[local_steps_for_config - 1].map(_ => 0));
+                }
             }
         }
     }
@@ -176,8 +167,9 @@ function calculate_thresholds(wind_dir, wind_speed) {
 }
 
 function calculate_windspeed_factor(wind_speed) {
+    const max_factor = 0.65
     // since its probabilty, we want to apply the sigmoid function to keep between 0 and 1
-    return 1 / (1 + Math.exp(-(wind_speed - 10)));
+    return max_factor * 1 / (1 + Math.exp(-(wind_speed - 10)));
 }
 
 function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
@@ -251,8 +243,8 @@ function all_particles_grounded(array) {
     return array.every(z => z <= 0);
 }
 
-function is_empty_configuration(array){
-    return array.every(sub_array => sub_array.every(i => i ===0));
+function is_empty_configuration(array) {
+    return array.every(sub_array => sub_array.every(i => i === 0));
 }
 
 function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_neighbour) {

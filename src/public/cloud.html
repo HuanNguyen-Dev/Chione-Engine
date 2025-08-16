@@ -134,11 +134,14 @@
           marker: { size: 3, color: 'blue', opacity: 0.6 }
         }]
       }));
-      const max_x = Math.max(...system_coord_x.flat(Infinity));
-      const min_x = Math.min(...system_coord_x.flat(Infinity));
+      // const step_x = system_coord_x.length;
+      const max_x = system_coord_x.reduce((max, step) => Math.max(max, ...step), -Infinity);
+      const min_x = system_coord_x.reduce((min, step) => Math.min(min, ...step), Infinity);
 
-      const max_y = Math.max(...system_coord_y.flat(Infinity));
-      const min_y = Math.min(...system_coord_y.flat(Infinity));
+      const step_y = system_coord_y.length;
+      const max_y = system_coord_y.reduce((max, step) => Math.max(max, ...step), -Infinity);
+      const min_y = system_coord_y.reduce((min, step) => Math.min(min, ...step), Infinity);
+
       const height = system_coord_z[0][0];
       const layout = {
         margin: { l: 0, r: 0, b: 0, t: 0 },
@@ -152,6 +155,7 @@
           center: { x: 0, y: 0, z: 0 },
           up: { x: 0, y: 0, z: 1 }
         },
+        aspectmode: 'manual',
         updatemenus: [{
           type: 'buttons',
           showactive: false,
@@ -159,7 +163,7 @@
             label: 'Play',
             method: 'animate',
             args: [null, {
-              frame: { duration: 200, redraw: true },
+              frame: { duration: 100, redraw: true },
               transition: { duration: 0 },
               fromcurrent: true,
               mode: "immediate"
