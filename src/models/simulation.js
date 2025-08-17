@@ -257,9 +257,14 @@ function calculate_next_configuration(state, neighbour_dir, min_neighbour, max_n
         for (let j = 0; j < cols; j++) {
             let live_neighbours = find_number_of_neighbours(state, neighbour_dir, i, j);
             // condition to survive
-            if (meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)) {
+            if (state[i][j] && meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)) {
                 tmp_state[i][j] = 1;
             }
+            // new particle is born
+            else if (state[i][j] === 0 && live_neighbours >= min_neighbour && live_neighbours <= max_neighbour) {
+                tmp_state[i][j] = 1;
+            }
+            // particle is dead
             else {
                 tmp_state[i][j] = 0;
             }
@@ -325,7 +330,7 @@ function find_number_of_neighbours(initial_state, neighbour_dir, i, j) {
 
 function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour) {
     return (live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
-        && (live_neighbours != max_neighbour - min_neighbour)
+    && (live_neighbours != max_neighbour - min_neighbour)
 }
 
 
