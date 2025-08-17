@@ -19,11 +19,13 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+
 const tasksRouter = require('./src/routes/tasks');
 const simulationRouter = require('./src/routes/simulation');
 const userRouter = require('./src/routes/user');
-const indexRouter = require('.src/routes/index');
+const indexRouter = require('./src/routes/index');
 
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use('/tasks', tasksRouter);
 app.use('/simulation',simulationRouter);

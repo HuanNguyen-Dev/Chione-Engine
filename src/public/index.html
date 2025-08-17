@@ -9,25 +9,50 @@
 
 <body>
     <form id="index">
-        <button type="button" onClick="go_settings()">Settings</button>
+        <button type="button" id="settings" onClick="go_settings()" style="display:none">Settings</button>
         <button type="button" onClick="go_simulation()">Cloud Simulation</button>
+        <button type="button" id="login" onclick="go_login()" style="display:none">Login</button>
+        <button type="button" id="register" onclick="go_register()" style="display:none">Register</button>
     </form>
-    <button type="submit" onclick="delete_user()">Delete Account</button>
 
     <script>
+
+
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (id) {
+            document.getElementById('settings').style.display = 'inline-block';
+        }
+        else {
+            document.getElementById('login').style.display = 'inline-block';
+            document.getElementById('register').style.display = 'inline-block';
+        }
+
+        function go_login() {
+            setTimeout(() => {
+                window.location.href = `/user/login`;
+            }, 200);
+        }
+
+        function go_register() {
+            setTimeout(() => {
+                window.location.href = `/user/register`;
+            }, 200);
+        }
+
         function go_settings() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             setTimeout(() => {
-                window.location.href = `option.html?id=${res.id}`;
-            }, 2000);
+                window.location.href = `/user/${id}/update`;
+            }, 200);
         }
 
         function go_simulation() {
             setTimeout(() => {
-                window.location.href = `cloud.html?`;
-            }, 2000);
+                window.location.href = `/simulation/cloud_simulation`;
+            }, 200);
         }
+
 
     </script>
 </body>

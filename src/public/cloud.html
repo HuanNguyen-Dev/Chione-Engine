@@ -24,6 +24,7 @@
     <button type="button" onClick="add_col()">Add Column</button>
     <button type="submit">Run Simulation</button>
   </form>
+  <button type="button" id="register" onclick="go_register()" style="display:none">Register</button>
 
   <div id="falling_snow_simulation" style="width: 100%; height: 600px;"></div>
 
@@ -31,6 +32,12 @@
     const form = document.getElementById('simulation_form');
     const table = document.getElementById('table');
     const plot = document.getElementById('falling_snow_simulation');
+
+    function go_home() {
+      setTimeout(() => {
+        window.location.href = `/`;
+      }, 200);
+    }
 
     function add_row(cols = table.rows[0]?.cells.length || 3) {
 

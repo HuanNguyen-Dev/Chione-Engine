@@ -20,7 +20,7 @@
 
     <script>
         function go_login() {
-            window.location.href = `login.html`;
+            window.location.href = `/user/login`;
         }
 
         const form = document.getElementById('register');
@@ -62,8 +62,8 @@
                 messageDiv.textContent = 'Successfully logging in..';
 
                 setTimeout(() => {
-                    window.location.href = `login.html`;
-                }, 2000);
+                    window.location.href = `/user/login`;
+                }, 200);
             } catch (error) {
                 messageDiv.style.color = 'red';
                 messageDiv.textContent = 'Network error: ' + error.message;
