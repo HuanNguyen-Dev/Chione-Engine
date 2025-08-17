@@ -4,59 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-
-
 
 </head>
 
 <body>
     <h2>Login</h2>
     <form id="login">
-        Username: <input type="text" name="username" value="Doe@example.com"><br>
-        Password: <input type="password" name="password" value="Passsword"><br>
-        <button type="submit" onClick="login()">Login</button>
+        Username: <input type="text" name="username"><br>
+        Password: <input type="password" name="password"><br>
+        <button type="submit">Login</button>
+        <div id="login_message" style="color: red; margin-top: 10px;"></div>
+        <button type="button" onclick="register()">Register</button>
     </form>
 
     <script>
-        async function handle_login(username, password) {
-            if (username && password) {
-                const user_data = { username, password }
-                try {
-                    const response = await fetch('/user/login', {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(user_data)
-                    });
-                    if (!response.ok) {
-                        return -1;
-                    }
-                    const data = await response.json();
-                    // localStorage.setItem('authToken', data.authToken);
-                    return data;
-                } catch {
-                    return -1;
-                }
-            }
-            else return -1;
+        function register() {
+            window.location.href = `register.html?`;
         }
 
         const form = document.getElementById('login');
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = form.username.value;
+            const messageDiv = document.getElementById('login_message');
+            messageDiv.textContent = '';
+            
+            const username = form.username.value.trim();
             const password = form.password.value;
-            const res = await handle_login(username, password)
+            // const res = await handle_login(username, password)
+            if (!username || !password) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Please enter both username and password.';
+                return;
+            }
 
-            if (res !== -1) {
-                if (res.ok) {
-                    console.log('Login successful:', res);
-                    // store auth
-                } else {
-                    console.error('Login error:', res.error);
+            const user_data = { username, password };
+
+            try {
+                const response = await fetch('/user/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(user_data)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = error?.message || 'Invalid credentials';
+                    return;
                 }
-            } else {
-                console.error('Login failed:' + res.error);
+                const data = await response.json();
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = 'Successfully logging in..';
+
+                setTimeout(() => {
+                    window.location.href = `index.html?id=${data.id}`;
+                }, 2000);
+                // localStorage.setItem('authToken', data.authToken);
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + error.message;
             }
         });
 

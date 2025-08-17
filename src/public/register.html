@@ -8,55 +8,65 @@
 </head>
 
 <body>
-    <h2>Login</h2>
+    <h2>Register</h2>
     <form id="register">
-        Username: <input type="text" name="username" value="Doe@example.com"><br>
-        Password: <input type="password" name="password" value="Passsword"><br>
-        Confirm Password: <input type="text" name="confirm_password" value="Password"><br>
+        Username: <input type="text" name="username"><br>
+        Password: <input type="password" name="password"><br>
+        Confirm Password: <input type="text" name="confirm_password"><br>
         <button type="submit">Register</button>
+        <div id="register_message" style="color: red; margin-top: 10px;"></div>
+        <button type="button" onClick="go_login()">Go Back To Login</button>
     </form>
 
     <script>
-        async function handle_registration(username, password) {
-            if (username && password) {
-                const user_data = { username, password }
-                try {
-                    const response = await fetch('/user/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(user_data)
-                    });
-                    if (!response.ok) {
-                        const error = await response.json();
-                        return { ok: false, error: error.message || 'Registration failed' }
-                    }
-                    const data = await response.json();
-                    // localStorage.setItem('authToken', data.authToken);
-                    return { ok: true, data };
-                } catch (error) {
-                    return { ok: false, error: error.message }
-                }
-            }
-            else return { ok: false, error: "Username or password is required" };
+        function go_login() {
+            window.location.href = `login.html`;
         }
 
         const form = document.getElementById('register');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = form.username.value;
+
+            const messageDiv = document.getElementById('login_message');
+            messageDiv.textContent = '';
+
+            const username = form.username.value.trim();
             const password = form.password.value;
             const confirm_password = form.confirm_password.value;
 
-            if (confirm_password !== password) {
-                console.error("Passwords do not match")
+            if (!username || !password || !confirm_password) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Please fill all fields!';
+                return;
             }
-            const res = await handle_registration(username, password)
 
-            if (res.ok) {
-                console.log('Registration successful:', res.data);
-                // Store authToken or take further action
-            } else {
-                console.error('Registration failed:', res.error);
+            if (password !== confirm_password) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Passwords do not match!';
+                return;
+            }
+            const user_data = { username, password }
+            try {
+                const response = await fetch('/user/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(user_data)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Error upon registration: ' + error.message;
+                    return;
+                }
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = 'Successfully logging in..';
+
+                setTimeout(() => {
+                    window.location.href = `login.html`;
+                }, 2000);
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + error.message;
             }
         });
 

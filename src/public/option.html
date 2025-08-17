@@ -1,1 +1,116 @@
-<script>// manage or delete account</script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>User Options</title>
+
+
+
+</head>
+
+<body>
+    <h2>User Settings</h2>
+    <form id="change_password">
+        Username: <input type="text" name="username"><br>
+        Old Password: <input type="password" name="old_password"><br>
+        New Password: <input type="password" name="password"><br>
+        Confirm New Password: <input type="password" name="confirm_password"><br>
+        <button type="submit">Change Password</button>
+        <div id="update_password" style="color: red; margin-top: 10px;"></div>
+    </form>
+    <button type="button" onclick="delete_user()">Delete Account</button>
+    <div id="delete_user" style="color: red; margin-top: 10px;"></div>
+    <script>
+
+        async function delete_user() {
+            const messageDiv = document.getElementById('delete_user');
+            messageDiv.textContent = '';
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            try {
+                const response = await fetch(`/user/${id}/delete`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: 'No longer needed' })
+                })
+                if (!response.ok) {
+                    const error = await response.json();
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Error: ' + (error.message || 'Failed to delete user.');
+                    return;
+                }
+
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = 'Account deleted. Redirecting to login...';
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + (error.message);
+                return;
+            }
+        }
+
+        const form = document.getElementById('change_password');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const messageDiv = document.getElementById('update_password');
+            messageDiv.textContent = '';
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            const username = form.username.value.trim();
+            const password = form.password.value;
+            const old_password = form.old_password.value;
+            const confirm_password = form.confirm_password.value;
+            if (!username || !password || !confirm_password || !old_password) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Please fill in all fields!';
+                return;
+            }
+
+            if (new_password !== confirm_password) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'New passwords do not match.';
+                return;
+            }
+            const user_data = { username, old_password, new_password }
+
+            try {
+                const response = await fetch(`/user/${id}/update`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(user_data)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Error: ' + (errorData.error || 'Failed to update password.');
+                    return;
+                }
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = 'Passwword changed. Redirecting to login...';
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + error.message;
+                return
+            }
+
+        });
+
+
+    </script>
+</body>
+
+</html>

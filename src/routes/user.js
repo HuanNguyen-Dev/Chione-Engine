@@ -3,7 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/users');
 const { authenticationToken } = require('../middlewares/jwt');
 
-router.get('/:id',controller.login);
-router.put('/:id',authenticationToken,controller.updateUser); // req auth
-router.delete('/:id',authenticationToken,controller.deleteUser); // req auth
+router.post('/login',controller.login);
+router.put('/:id/update',authenticationToken,controller.updateUserPassword); // req auth
+router.delete('/:id/delete',authenticationToken,controller.deleteUser); // req auth
 router.post('/register',controller.createUser);

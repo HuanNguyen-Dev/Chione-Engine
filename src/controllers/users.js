@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const { generateAccessToken } = require('../middleware/jwt')
 
 exports.getAllUsers = (req, res) => {
     User.getAll()
@@ -12,6 +13,7 @@ exports.login = (req, res) => {
     try {
         User.verifyUser(username, password)
         .then(row => {
+            row.authToken = generateAccessToken({ username });
             {return res.status(200).json(row);}
         })
     }catch(err){
@@ -24,16 +26,16 @@ exports.createUser = (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
 
     User.create(username, password)
-        .then(task => {return res.status(201).json(task)})
+        .then(user => {return res.status(201).json(user)})
         .catch(err => res.status(500).json({ error: err.message }));
 };
 
 exports.updateUserPassword = (req, res) => {
-    const { username, new_password } = req.body;
+    const { username, old_password, new_password } = req.body;
 
-    User.update(username, new_password)
+    User.update(username, old_password,new_password)
         .then(result => {
-            return res.json({ message: 'Task updated' });
+            return res.json({ message: 'User updated' });
         })
         .catch(err => res.status(404).json({ error: err.message }));
 };
@@ -41,8 +43,8 @@ exports.updateUserPassword = (req, res) => {
 exports.deleteUser = (req, res) => {
     User.remove(req.params.id)
         .then(result => {
-            if (!result.deleted) return res.status(404).json({ error: 'Task not found' });
-            return res.json({ message: 'Task deleted' });
+            if (!result.deleted) return res.status(404).json({ error: 'User not found' });
+            return res.json({ message: 'User deleted' });
         })
         .catch(err => res.status(500).json({ error: err.message }));
 };

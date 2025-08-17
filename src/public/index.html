@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome To Bon's Cloud Simulation</title>
+
+</head>
+
+<body>
+    <form id="index">
+        <button type="button" onClick="go_settings()">Settings</button>
+        <button type="button" onClick="go_simulation()">Cloud Simulation</button>
+    </form>
+    <button type="submit" onclick="delete_user()">Delete Account</button>
+
+    <script>
+        function go_settings() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            setTimeout(() => {
+                window.location.href = `option.html?id=${res.id}`;
+            }, 2000);
+        }
+
+        function go_simulation() {
+            setTimeout(() => {
+                window.location.href = `cloud.html?`;
+            }, 2000);
+        }
+
+    </script>
+</body>
+
+</html>

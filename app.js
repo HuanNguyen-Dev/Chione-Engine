@@ -21,12 +21,13 @@ const app = express();
 
 const tasksRouter = require('./src/routes/tasks');
 const simulationRouter = require('./src/routes/simulation');
-const userRouter = require('./src/routes/user')
+const userRouter = require('./src/routes/user');
+const indexRouter = require('.src/routes/index');
 
 app.use(express.json());
 app.use('/tasks', tasksRouter);
 app.use('/simulation',simulationRouter);
 app.use('/user',userRouter);
-
+app.use('/',indexRouter)
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
