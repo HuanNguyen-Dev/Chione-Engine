@@ -36,8 +36,8 @@ exports.create = async (username, password) => {
     let conn;
     try {
         conn = await pool.getConnection();
-
-        const hash = await bcrypt.hash(password, saltRounds);
+        let salt_rounds = 10;
+        const hash = await bcrypt.hash(password, salt_rounds);
 
         const result = await conn.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash]);
         return { id: Number(result.insertId), username };
