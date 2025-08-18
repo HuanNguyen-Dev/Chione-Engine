@@ -39,12 +39,33 @@
             }, 200);
         }
 
-        function go_settings() {
+        async function go_settings() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
-            setTimeout(() => {
-                window.location.href = `/user/${id}/update`;
-            }, 200);
+            const authToken = localStorage.getItem('authToken');
+
+            if (!authToken) {
+                alert('Please log in first!');
+                return;
+            }
+            try {
+                const res = await fetch(`/user/${id}/update`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (res.ok) {
+                    window.location.href = `/user/${id}/update`;
+                } else {
+                    const err = await res.json();
+                    alert('Access denied: ' + err.error);
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+            }
+
         }
 
         function go_simulation() {

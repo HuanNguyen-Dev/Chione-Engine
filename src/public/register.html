@@ -55,7 +55,7 @@
                 if (!response.ok) {
                     const error = await response.json();
                     messageDiv.style.color = 'red';
-                    messageDiv.textContent = 'Error upon registration: ' + error.message;
+                    messageDiv.textContent = 'Error upon registration: ' + error.error;
                     return;
                 }
                 messageDiv.style.color = 'green';
@@ -66,7 +66,7 @@
                 }, 200);
             } catch (error) {
                 messageDiv.style.color = 'red';
-                messageDiv.textContent = 'Network error: ' + error.message;
+                messageDiv.textContent = 'Network error: ' + error.error;
             }
         });
 

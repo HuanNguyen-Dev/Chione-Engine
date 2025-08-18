@@ -44,10 +44,11 @@
 
                 messageDiv.style.color = 'green';
                 messageDiv.textContent = 'Account deleted. Redirecting to login...';
+                localStorage.removeItem('authToken');
 
                 setTimeout(() => {
                     window.location.href = 'login.html';
-                }, 2000);
+                }, 200);
             } catch (error) {
                 messageDiv.style.color = 'red';
                 messageDiv.textContent = 'Network error: ' + (error.message);
@@ -99,7 +100,7 @@
 
                 setTimeout(() => {
                     window.location.href = '/user/login';
-                }, 2000);
+                }, 200);
 
             } catch (error) {
                 messageDiv.style.color = 'red';
