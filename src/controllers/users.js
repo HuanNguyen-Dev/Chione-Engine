@@ -31,7 +31,9 @@ exports.createUser = (req, res) => {
 
     User.create(username, password)
         .then(user => { return res.status(201).json(user) })
-        .catch(err => res.status(500).json({ error: err.message }));
+        .catch(err => {
+            console.error('DB Error: ', err);
+            res.status(500).json({ error: err.message })});
 };
 
 exports.updateUserPassword = (req, res) => {

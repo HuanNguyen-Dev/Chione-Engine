@@ -3,16 +3,24 @@
 // sudo -iu ubuntu
 
 
+
+// netstat -aon | findstr :3306
+// Get-Process -Id 4796
+
 // npm init -y
 // npm install mariadb
 // npm install expressdo
 // npm install plotly.js
 // win + r, services.msc, mysql92 stop to get port 3306 free
 
+// // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
+
+
 // start docker app up 
 // aws sso login
 // aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 // push and pull to ecr
+// docker built -t simulation .
 // docker tag task-api:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:prac_3_base
 // docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:prac_3_base
 const express = require('express');
