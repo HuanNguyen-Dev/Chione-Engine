@@ -29,7 +29,7 @@ exports.createUser = async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
     try {
         const result = await User.create(username, password);
-        return res.status(201).json(user)
+        return res.status(201).json(result.username);
     } catch (err) {
         if (err.code === 'SQLITE_CONSTRAINT') {
             return res.status(409).json({ error: 'Username already exists.' });
@@ -45,7 +45,7 @@ exports.updateUserPassword = async (req, res) => {
     try {
         const result = await User.update(username, old_password, new_password);
         if (!result.updated) return res.status(404).json({ error: 'User ID not found!' });
-        return res.status.json({ message: 'User updated' });
+        return res.status(200).json({ message: 'User updated' });
     } catch (err) {
         return res.status(500).json({ error: err.message })
     }
@@ -63,10 +63,6 @@ exports.deleteUser = async (req, res) => {
 
 exports.showDeletePage = async (req, res) => {
     try {
-        const user = await User.retreiveUser(req.user.username);
-        if (!user) {
-            return res.status(404).send('User not found!');
-        }
         res.sendFile(path.join(__dirname, '..', 'public', 'option.html'));
     } catch (err) {
         console.error("Error loading delete page:", err);

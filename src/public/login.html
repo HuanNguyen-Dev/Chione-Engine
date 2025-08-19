@@ -48,7 +48,7 @@
                 if (!response.ok) {
                     const error = await response.json();
                     messageDiv.style.color = 'red';
-                    messageDiv.textContent = error?.message || 'Invalid credentials';
+                    messageDiv.textContent = error?.error || 'Invalid credentials';
                     return;
                 }
                 const data = await response.json();

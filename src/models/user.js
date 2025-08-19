@@ -9,16 +9,15 @@ exports.getAll = async () => {
     return rows;
 };
 
-exports.retreiveUser = async (username) => {
+exports.checkUserExists = async (username) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        const rows = await conn.query('SELECT usersname FROM users WHERE username = ?', [username])
+        const rows = await conn.query('SELECT username FROM users WHERE username = ?', [username])
         if (rows.length <= 0) {
-            throw new Error("User does not exist!");
+            return { result: false }
         }
-        const username = rows[0];
-        return { username: username };
+        return { result: true };
     } catch (err) {
         throw new Error("Error retreiving user: " + err.message)
     } finally {
@@ -70,13 +69,15 @@ exports.create = async (username, password) => {
 exports.update = async (username, old_password, new_password) => {
     let conn;
     try {
-        const valid_user = await this.verifyUser(username, old_password, new_password);
+        const valid_user = await this.verifyUser(username, old_password);
         if (valid_user.id && valid_user.username) {
+            let salt_rounds = 10;
+            const hash = await bcrypt.hash(new_password, salt_rounds);
 
             conn = await pool.getConnection();
             const result = await conn.query(
-                'UPDATE users SET username = ?, password = ?',
-                [username, new_password]
+                'UPDATE users SET password = ? WHERE username = ?',
+                [hash, username]
             );
             return { updated: result.affectedRows > 0 };
         }
@@ -90,11 +91,12 @@ exports.update = async (username, old_password, new_password) => {
     }
 };
 
-exports.remove = async (username) => {
+exports.remove = async (id) => {
     let conn;
     try {
         const conn = await pool.getConnection();
-        const result = await conn.query('DELETE FROM users WHERE username = ?', [username]);
+        const result = await conn.query('DELETE FROM users WHERE id = ?', [id]);
+        return { deleted: result.affectedRows > 0 };
     } catch (err) {
         throw new Error("An error has occured while deleting a user: " + err.message);
     }
@@ -103,5 +105,4 @@ exports.remove = async (username) => {
             conn.release();
         }
     }
-    return { deleted: result.affectedRows > 0 };
 };
