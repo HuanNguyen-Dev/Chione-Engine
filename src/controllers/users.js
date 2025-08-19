@@ -1,56 +1,83 @@
 const User = require('../models/user');
 const { generateAccessToken } = require('../middleware/jwt')
+const path = require('path');
 
 
-
-exports.getAllUsers = (req, res) => {
-    User.getAll()
-        .then(rows => { return res.json(rows) })
-        .catch(err => res.status(500).json({ error: err.message }));
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.getAll()
+        return res.status(200).json({ users: users });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
     try {
-        User.verifyUser(username, password)
-            .then(row => {
-                row.authToken = generateAccessToken({ username });
-                { return res.status(200).json(row); }
-            }).catch(err => {
-                return res.status(400).json({ error: err.message });
-            });
+        const user = await User.verifyUser(username, password);
+        user.authToken = generateAccessToken({ username });
+        return res.status(200).json(user);
     } catch (err) {
         return res.status(400).json({ error: err.message });
     }
 };
 
-exports.createUser = (req, res) => {
+exports.createUser = async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
-
-    User.create(username, password)
-        .then(user => { return res.status(201).json(user) })
-        .catch(err => {
-            console.error('DB Error: ', err);
-            res.status(500).json({ error: err.message })});
+    try {
+        const result = await User.create(username, password);
+        return res.status(201).json(user)
+    } catch (err) {
+        if (err.code === 'SQLITE_CONSTRAINT') {
+            return res.status(409).json({ error: 'Username already exists.' });
+        }
+        console.error('DB Error: ', err);
+        res.status(500).json({ error: 'Server error' })
+    }
 };
 
-exports.updateUserPassword = (req, res) => {
-    const { username, old_password, new_password } = req.body;
-
-    User.update(username, old_password, new_password)
-        .then(result => {
-            return res.json({ message: 'User updated' });
-        })
-        .catch(err => res.status(404).json({ error: err.message }));
+exports.updateUserPassword = async (req, res) => {
+    const { old_password, new_password } = req.body;
+    const username = req.user.username;
+    try {
+        const result = await User.update(username, old_password, new_password);
+        if (!result.updated) return res.status(404).json({ error: 'User ID not found!' });
+        return res.status.json({ message: 'User updated' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message })
+    }
 };
 
-exports.deleteUser = (req, res) => {
-    User.remove(req.params.id)
-        .then(result => {
-            if (!result.deleted) return res.status(404).json({ error: 'User not found' });
-            return res.json({ message: 'User deleted' });
-        })
-        .catch(err => res.status(500).json({ error: err.message }));
+exports.deleteUser = async (req, res) => {
+    try {
+        const results = await User.remove(req.params.id);
+        if (!results.deleted) return res.status(404).json({ error: 'User ID not found!' });
+        return res.status(200).json({ message: 'User has been deleted!' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message })
+    }
+};
+
+exports.showDeletePage = async (req, res) => {
+    try {
+        const user = await User.retreiveUser(req.user.username);
+        if (!user) {
+            return res.status(404).send('User not found!');
+        }
+        res.sendFile(path.join(__dirname, '..', 'public', 'option.html'));
+    } catch (err) {
+        console.error("Error loading delete page:", err);
+        res.status(500).send('Server error');
+    }
+};
+
+exports.showRegisterPage = (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'register.html'));
+};
+
+exports.showLoginPage = (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 };
