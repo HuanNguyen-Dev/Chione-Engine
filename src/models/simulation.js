@@ -329,7 +329,7 @@ function find_number_of_neighbours(initial_state, neighbour_dir, i, j) {
 }
 
 function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour) {
-    return (live_neighbours > min_neighbour) && (live_neighbours < max_neighbour)
+    return (live_neighbours >= min_neighbour) && (live_neighbours <= max_neighbour)
     && (live_neighbours != max_neighbour - min_neighbour)
 }
 
