@@ -115,32 +115,53 @@
     });
 
     function animateCloud(system_coord_x, system_coord_y, system_coord_z) {
-      // initial frame (timestep 0)
-      const trace = {
-        x: system_coord_x[0],
-        y: system_coord_y[0],
-        z: system_coord_z[0],
-        mode: 'markers',
-        type: 'scatter3d',
-        marker: { size: 3, color: 'blue', opacity: 0.6 }
-      };
+      const initial_traces = [];
+      const num_timesteps = system_coord_x.length;
+      const num_particles = system_coord_x[0].length;
+
+      // initial frame (timestep 0) -trace for every particle
+      for (let p = 0; p < num_particles; p++) {
+        initial_traces.push({
+          x: [system_coord_x[0][p]],
+          y: [system_coord_y[0][p]],
+          z: [system_coord_z[0][p]],
+          mode: 'markers',
+          type: 'scatter3d',
+          marker: {
+            size: 3,
+            color: 'rgba(0, 0, 255, 0.6)'
+          },
+          name: `Particle ${p}`,
+          showlegend: false
+        });
+      }
 
       // remove empty array
       system_coord_x = system_coord_x.filter(item => !Array.isArray(item) || item.length > 0);
       system_coord_y = system_coord_y.filter(item => !Array.isArray(item) || item.length > 0);
       system_coord_z = system_coord_z.filter(item => !Array.isArray(item) || item.length > 0);
 
-      const frames = system_coord_x.map((_, t) => ({
-        name: `frame${t}`,
-        data: [{
-          x: system_coord_x[t],
-          y: system_coord_y[t],
-          z: system_coord_z[t],
-          mode: 'markers',
-          type: 'scatter3d',
-          marker: { size: 3, color: 'blue', opacity: 0.6 }
-        }]
-      }));
+      const frames = [];
+      for (let t = 0; t < num_timesteps; t++) {
+        const frame_data = [];
+        for (let p = 0; p < num_particles; p++) {
+          frame_data.push({
+            x: [system_coord_x[t][p]],
+            y: [system_coord_y[t][p]],
+            z: [system_coord_z[t][p]],
+            type: 'scatter3d',
+            mode: 'markers',
+            marker: {
+              size: 3,
+              color: 'rgba(0, 0, 255, 0.6)'
+            }
+          });
+        }
+        frames.push({
+          name: `frame${t}`,
+          data: frame_data
+        });
+      }
       // const step_x = system_coord_x.length;
       const max_x = system_coord_x.reduce((max, step) => Math.max(max, ...step), -Infinity);
       const min_x = system_coord_x.reduce((min, step) => Math.min(min, ...step), Infinity);
@@ -159,7 +180,7 @@
         },
         camera: {
           eye: { x: 0.8, y: 0.8, z: 0.8 }, // fixed view point
-          center: { x: 0, y: 0, z: height/2 },
+          center: { x: 0, y: 0, z: height / 2 },
           up: { x: 0, y: 0, z: 1 }
         },
         aspectmode: 'manual',
@@ -182,7 +203,7 @@
       const config = {
         willReadFrequently: true
       };
-      Plotly.newPlot(plot, [trace], layout, config).then(() => {
+      Plotly.newPlot(plot, initial_traces, layout, config).then(() => {
         Plotly.addFrames(plot, frames)
       })
     }
