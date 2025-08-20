@@ -2,6 +2,10 @@
 // aws ssm start-session --target=$INSTANCE
 // sudo -iu ubuntu
 
+// git clone in ec2 once only
+// ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+// cat ~/.ssh/id_rsa.pub (copy everything)
+// add ssh key to your git --> settings, ssh and gpg keys --> add ssh
 
 
 // netstat -aon | findstr :3306
