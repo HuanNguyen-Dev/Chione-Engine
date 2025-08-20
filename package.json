@@ -13,10 +13,8 @@
     "bcrypt": "^6.0.0",
     "canvas": "^3.2.0",
     "express": "^5.1.0",
-    "gl": "^8.1.6",
     "jsonwebtoken": "^9.0.2",
     "mariadb": "^3.4.5",
-    "plotly.js": "^3.1.0",
-    "three": "^0.179.1"
+    "plotly.js": "^3.1.0"
   }
 }

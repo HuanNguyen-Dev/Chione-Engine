@@ -336,8 +336,8 @@ function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)
         && (live_neighbours != max_neighbour - min_neighbour)
 }
 
-async function render_video(params,writeStream) {
-    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = params;
+async function render_video(params, writeStream) {
+    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour, view = "default" } = params;
 
     if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) throw new Error("Invalid parameters");
 
@@ -388,10 +388,11 @@ async function render_video(params,writeStream) {
     const baseScale = (Math.min(width, heightPx) / 2 - 50) / maxDim;
     const angle = Math.PI / 6;
 
-    for (let t = 0; t < framesX.length; t++) {
+    // let velocities = view === "velocity" ? [] : null;
+    for (let t = (view === "velocity" ? 1 : 0); t < framesX.length; t++) {
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, width, heightPx);
-
+        // let frameVel = [];
         for (let p = 0; p < framesX[t].length; p++) {
             const x = framesX[t][p] - centerX;
             const y = framesY[t][p] - centerY;
@@ -401,14 +402,41 @@ async function render_video(params,writeStream) {
             const screenX = (x - y) * Math.cos(angle) * baseScale + width / 2;
             const screenY = (x + y) * Math.sin(angle) * baseScale - z * baseScale + heightPx / 2;
 
+
             const radius = 2 * scale;
-            const brightness = Math.min(255, 150 + z * 10);
-            ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+            if (view === "depth") {
+                const zNorm = (z - minZ) / (maxZ - minZ); // normalize 0–1
+                const r = Math.floor(255 * (1 - zNorm));
+                const g = Math.floor(255 * zNorm);
+                const b = 255;
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            }
+            else if (view === "velocity") {
+                const dx = framesX[t][p] - framesX[t - 1][p];
+                const dy = framesY[t][p] - framesY[t - 1][p];
+                const dz = framesZ[t][p] - framesZ[t - 1][p];
+                const speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                const normSpeed = speed / 5; // or dynamic max speed
+                const r = Math.floor(255 * Math.min(1, normSpeed));
+                const b = Math.floor(255 * Math.min(1, 1 - normSpeed));
+                const g = 50;
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                // if (velocities) frameVel.push(speed);
+            }
+            else {
+                const brightness = Math.min(255, 150 + z * 10);
+                ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+            }
 
             ctx.beginPath();
             ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
             ctx.fill();
         }
+        // if (view === "velocity") {
+        //     velocities.push(frameVel);
+        // }
 
         const buf = canvas.toBuffer('image/png');
         await writeFrame(buf);
@@ -423,6 +451,66 @@ async function render_video(params,writeStream) {
         });
     });
 }
+
+/**
+ * const depthColoring = true; // toggle this
+...
+const zNorm = (cz - minZ) / (maxZ - minZ); // normalize 0–1
+
+if (depthColoring) {
+    const r = Math.floor(255 * (1 - zNorm));
+    const g = Math.floor(255 * zNorm);
+    const b = 255;
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`; // blueish gradient
+} else {
+    const brightness = Math.min(255, 100 + z * 10);
+    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+}
+
+
+//
+const useVelocityColor = true;
+
+let velocities = [];
+for (let t = 1; t < framesX.length; t++) {
+    let frameVel = [];
+    for (let p = 0; p < framesX[t].length; p++) {
+        const dx = framesX[t][p] - framesX[t - 1][p];
+        const dy = framesY[t][p] - framesY[t - 1][p];
+        const dz = framesZ[t][p] - framesZ[t - 1][p];
+        const speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        frameVel.push(speed);
+    }
+    velocities.push(frameVel);
+}
+// Fill in t=0 with zeros
+velocities.unshift(Array(framesX[0].length).fill(0));
+
+const maxSpeed = Math.max(...velocities.flat());
+
+if (useVelocityColor) {
+    const speed = velocities[t][p];
+    const normSpeed = speed / maxSpeed; // 0–1
+
+    // Fast = red, Slow = blue
+    const r = Math.floor(255 * normSpeed);
+    const b = Math.floor(255 * (1 - normSpeed));
+    const g = 50;
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+}
+///
+if (coloringMode === "depth") {
+    ...
+} else if (coloringMode === "velocity") {
+    ...
+} else {
+    ctx.fillStyle = 'white'; // default
+}
+
+
+//
+
+ */
 
 
 module.exports = {

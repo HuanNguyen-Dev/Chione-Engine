@@ -3,8 +3,8 @@ const { spawn } = require('child_process')
 const { createCanvas } = require('canvas')
 
 exports.falling_snow = (req, res) => {
-    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = req.body;
-    if (!initial_state || !steps || !height) return res.status(500).json({ error: "Please enter in a valid value" })
+    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour} = req.body;
+    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(500).json({ error: "Please enter in a valid value" })
     try {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;
