@@ -26,7 +26,7 @@
   </form>
   <button type="button" id="register" onclick="go_home()">Home Page</button>
 
-  <div id="falling_snow_simulation" style="width: 100%; height: 600px;"></div>
+  <video id="video" controls autoplay style="width:100%; height:600px;"></video>
 
   <script>
     const form = document.getElementById('simulation_form');
@@ -95,118 +95,15 @@
       formData.max_neighbour = Number(formData.max_neighbour);
 
 
-      const res = await fetch('/simulation/falling_snow', {
+      const res = await fetch('/simulation/falling_snow_video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        const x = data.system_coordinate_history_x;
-        const y = data.system_coordinate_history_y;
-        const z = data.system_coordinate_history_z;
-
-        animateCloud(x, y, z);
-      }
-      else {
-        console.error('Error JSON:', data);
-      }
-    });
-
-    function animateCloud(system_coord_x, system_coord_y, system_coord_z) {
-      const initial_traces = [];
-      const num_timesteps = system_coord_x.length;
-      const num_particles = system_coord_x[0].length;
-
-      // initial frame (timestep 0) -trace for every particle
-      for (let p = 0; p < num_particles; p++) {
-        initial_traces.push({
-          x: [system_coord_x[0][p]],
-          y: [system_coord_y[0][p]],
-          z: [system_coord_z[0][p]],
-          mode: 'markers',
-          type: 'scatter3d',
-          marker: {
-            size: 3,
-            color: 'rgba(0, 0, 255, 0.6)'
-          },
-          name: `Particle ${p}`,
-          showlegend: false
-        });
-      }
-
-      // remove empty array
-      system_coord_x = system_coord_x.filter(item => !Array.isArray(item) || item.length > 0);
-      system_coord_y = system_coord_y.filter(item => !Array.isArray(item) || item.length > 0);
-      system_coord_z = system_coord_z.filter(item => !Array.isArray(item) || item.length > 0);
-
-      const frames = [];
-      for (let t = 0; t < num_timesteps; t++) {
-        const frame_data = [];
-        for (let p = 0; p < num_particles; p++) {
-          frame_data.push({
-            x: [system_coord_x[t][p]],
-            y: [system_coord_y[t][p]],
-            z: [system_coord_z[t][p]],
-            type: 'scatter3d',
-            mode: 'markers',
-            marker: {
-              size: 3,
-              color: 'rgba(0, 0, 255, 0.6)'
-            }
-          });
-        }
-        frames.push({
-          name: `frame${t}`,
-          data: frame_data
-        });
-      }
-      // const step_x = system_coord_x.length;
-      const max_x = system_coord_x.reduce((max, step) => Math.max(max, ...step), -Infinity);
-      const min_x = system_coord_x.reduce((min, step) => Math.min(min, ...step), Infinity);
-
-      const step_y = system_coord_y.length;
-      const max_y = system_coord_y.reduce((max, step) => Math.max(max, ...step), -Infinity);
-      const min_y = system_coord_y.reduce((min, step) => Math.min(min, ...step), Infinity);
-
-      const height = system_coord_z[0][0];
-      const layout = {
-        margin: { l: 0, r: 0, b: 0, t: 0 },
-        scene: {
-          xaxis: { title: 'X', range: [min_x, max_x], autorange: false },
-          yaxis: { title: 'Y', range: [min_y, max_y], autorange: false },
-          zaxis: { title: 'Z', range: [-1, height], autorange: false }
-        },
-        camera: {
-          eye: { x: 0.8, y: 0.8, z: 0.8 }, // fixed view point
-          center: { x: 0, y: 0, z: height / 2 },
-          up: { x: 0, y: 0, z: 1 }
-        },
-        aspectmode: 'manual',
-        updatemenus: [{
-          type: 'buttons',
-          showactive: false,
-          buttons: [{
-            label: 'Play',
-            method: 'animate',
-            args: [null, {
-              frame: { duration: 100, redraw: true },
-              transition: { duration: 0 },
-              fromcurrent: true,
-              mode: "immediate"
-            }]
-          }]
-        }],
-      };
-
-      const config = {
-        willReadFrequently: true
-      };
-      Plotly.newPlot(plot, initial_traces, layout, config).then(() => {
-        Plotly.addFrames(plot, frames)
-      })
-    }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      document.getElementById("video").src = url;
+  });
   </script>
 </body>
 
