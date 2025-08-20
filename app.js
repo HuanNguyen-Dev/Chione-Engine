@@ -15,6 +15,7 @@
 // npm install mariadb
 // npm install expressdo
 // npm install plotly.js
+// npm install canvas gl three
 // win + r, services.msc, mysql92 stop to get port 3306 free
 
 // // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"

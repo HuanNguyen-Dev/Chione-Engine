@@ -1,3 +1,6 @@
+const { spawn } = require('child_process');
+const { createCanvas } = require('canvas');
+
 // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
 // const vector = require('./vector') // import vector class
 function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
@@ -330,11 +333,100 @@ function find_number_of_neighbours(initial_state, neighbour_dir, i, j) {
 
 function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour) {
     return (live_neighbours >= min_neighbour) && (live_neighbours <= max_neighbour)
-    && (live_neighbours != max_neighbour - min_neighbour)
+        && (live_neighbours != max_neighbour - min_neighbour)
+}
+
+async function render_video(params,writeStream) {
+    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = params;
+
+    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) throw new Error("Invalid parameters");
+
+    // run simulation
+    const sim = falling_snow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
+    const framesX = sim.system_coordinate_history_x;
+    const framesY = sim.system_coordinate_history_y;
+    const framesZ = sim.system_coordinate_history_z;
+
+    const width = 800, heightPx = 600;
+    const canvas = createCanvas(width, heightPx);
+    const ctx = canvas.getContext('2d');
+
+    // spawn ffmpeg
+    const ffmpeg = spawn('ffmpeg', [
+        '-y',
+        '-f', 'image2pipe',
+        '-vcodec', 'png',
+        '-r', '20',
+        '-i', '-',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-movflags', 'frag_keyframe+faststart',
+        '-f', 'mp4',
+        'pipe:1'
+    ]);
+
+    ffmpeg.stdout.pipe(writeStream);
+    ffmpeg.stderr.on('data', d => console.error(d.toString()));
+
+    const writeFrame = (buf) => new Promise((resolve, reject) => {
+        ffmpeg.stdin.write(buf, err => (err ? reject(err) : resolve()));
+    });
+
+    // center and scale calculation
+    const maxX = framesX.reduce((max, step) => Math.max(max, ...step), -Infinity);
+    const minX = framesX.reduce((min, step) => Math.min(min, ...step), Infinity);
+    const maxY = framesY.reduce((max, step) => Math.max(max, ...step), -Infinity);
+    const minY = framesY.reduce((min, step) => Math.min(min, ...step), Infinity);
+    const maxZ = framesZ.reduce((max, step) => Math.max(max, ...step), -Infinity);
+    const minZ = framesZ.reduce((min, step) => Math.min(min, ...step), Infinity);
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+
+    const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+    const baseScale = (Math.min(width, heightPx) / 2 - 50) / maxDim;
+    const angle = Math.PI / 6;
+
+    for (let t = 0; t < framesX.length; t++) {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, width, heightPx);
+
+        for (let p = 0; p < framesX[t].length; p++) {
+            const x = framesX[t][p] - centerX;
+            const y = framesY[t][p] - centerY;
+            const z = framesZ[t][p] - centerZ;
+
+            const scale = 1 / (1 + z * 0.05);
+            const screenX = (x - y) * Math.cos(angle) * baseScale + width / 2;
+            const screenY = (x + y) * Math.sin(angle) * baseScale - z * baseScale + heightPx / 2;
+
+            const radius = 2 * scale;
+            const brightness = Math.min(255, 150 + z * 10);
+            ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        const buf = canvas.toBuffer('image/png');
+        await writeFrame(buf);
+    }
+
+    ffmpeg.stdin.end();
+
+    return new Promise((resolve, reject) => {
+        ffmpeg.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`ffmpeg exited with code ${code}`));
+        });
+    });
 }
 
 
 module.exports = {
     falling_snow,
     cellula_automata,
+    render_video
 }
