@@ -452,66 +452,6 @@ async function render_video(params, writeStream) {
     });
 }
 
-/**
- * const depthColoring = true; // toggle this
-...
-const zNorm = (cz - minZ) / (maxZ - minZ); // normalize 0–1
-
-if (depthColoring) {
-    const r = Math.floor(255 * (1 - zNorm));
-    const g = Math.floor(255 * zNorm);
-    const b = 255;
-    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`; // blueish gradient
-} else {
-    const brightness = Math.min(255, 100 + z * 10);
-    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
-}
-
-
-//
-const useVelocityColor = true;
-
-let velocities = [];
-for (let t = 1; t < framesX.length; t++) {
-    let frameVel = [];
-    for (let p = 0; p < framesX[t].length; p++) {
-        const dx = framesX[t][p] - framesX[t - 1][p];
-        const dy = framesY[t][p] - framesY[t - 1][p];
-        const dz = framesZ[t][p] - framesZ[t - 1][p];
-        const speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        frameVel.push(speed);
-    }
-    velocities.push(frameVel);
-}
-// Fill in t=0 with zeros
-velocities.unshift(Array(framesX[0].length).fill(0));
-
-const maxSpeed = Math.max(...velocities.flat());
-
-if (useVelocityColor) {
-    const speed = velocities[t][p];
-    const normSpeed = speed / maxSpeed; // 0–1
-
-    // Fast = red, Slow = blue
-    const r = Math.floor(255 * normSpeed);
-    const b = Math.floor(255 * (1 - normSpeed));
-    const g = 50;
-    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-}
-///
-if (coloringMode === "depth") {
-    ...
-} else if (coloringMode === "velocity") {
-    ...
-} else {
-    ctx.fillStyle = 'white'; // default
-}
-
-
-//
-
- */
-
 
 module.exports = {
     falling_snow,

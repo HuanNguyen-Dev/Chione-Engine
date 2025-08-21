@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cloud Simulation</title>
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+
+  <!-- Three.js + OrbitControls -->
+  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    body { margin: 0; background:#111; color:#eee; font-family: system-ui, Arial, sans-serif; }
+    #three { width: 100%; height: 600px; border: 1px solid #222; margin-top: 12px; }
+    form input, form button, form label { margin: 4px 0; }
+    .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <h2>Cloud Simulation</h2>
+
+  <form id="simulation_form">
+    <div class="row">
+      Steps: <input type="number" name="steps" value="50">
+      Height: <input type="number" name="height" value="10">
+      Wind Speed: <input type="number" name="wind_speed" value="5">
+      Wind Direction: <input type="text" name="wind_dir" value="north">
+      Min Neighbour: <input type="number" name="min_neighbour" value="3">
+      Max Neighbour: <input type="number" name="max_neighbour" value="8">
+    </div>
+
+    <div>Initial State (Binary Only):</div>
+    <table id="table"></table>
+    <button type="button" onClick="add_row()">Add Row</button>
+    <button type="button" onClick="add_col()">Add Column</button>
+
+    <div class="row">
+      <label><input type="radio" name="view" value="velocity"> View Velocity</label>
+      <label><input type="radio" name="view" value="depth"> View Depth</label>
+      <label><input type="radio" name="view" value="default" checked> Default View</label>
+      <button type="submit">Run Simulation</button>
+      <button type="button" id="register" onclick="go_home()">Home Page</button>
+      <button type="button" id="playPauseBtn">Pause</button>
+    </div>
+  </form>
+
+  <!-- Three.js canvas host -->
+  <div id="three"></div>
+
+  <script>
+    // --- form + table helpers ---
+    const form = document.getElementById('simulation_form');
+    const table = document.getElementById('table');
+
+    function go_home() {
+      setTimeout(() => { window.location.href = `/`; }, 200);
+    }
+
+    function add_row(cols = table.rows[0]?.cells.length || 4) {
+      const row = table.insertRow();
+      for (let i = 0; i < cols; i++) {
+        const cell = row.insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        cell.appendChild(input);
+      }
+    }
+
+    function add_col() {
+      for (let i = 0; i < table.rows.length; i++) {
+        const cell = table.rows[i].insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        cell.appendChild(input);
+      }
+    }
+
+    function initialise_table(row, col) {
+      for (let i = 0; i < row; i++) add_row(col);
+    }
+    initialise_table(4, 4);
+
+    // --- THREE setup ---
+    const host = document.getElementById('three');
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x101014);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 5000);
+    camera.position.set(40, 30, 40);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const grid = new THREE.GridHelper(200, 20, 0x333333, 0x222222);
+    grid.position.y = -0.01;
+    scene.add(grid);
+
+    const axes = new THREE.AxesHelper(30);
+    scene.add(axes);
+
+    // Resize handler
+    function resize() {
+      const w = host.clientWidth || window.innerWidth;
+      const h = host.clientHeight || 600;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- Geometry/Material for points ---
+    let points = null;
+    let posAttr = null, colAttr = null;
+    let positions = null, colors = null;
+
+    // Animation state
+    let framesX = null, framesY = null, framesZ = null;
+    let T = 0, N = 0;
+    let frameIndex = 0;
+    let playing = true;
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    playPauseBtn.onclick = () => { playing = !playing; playPauseBtn.textContent = playing ? 'Pause' : 'Play'; };
+
+    // View mode (default | depth | velocity)
+    function getViewMode() {
+      const checked = form.querySelector('input[name="view"]:checked');
+      return checked ? checked.value : 'default';
+    }
+
+    // Utility: compute center + scale to fit
+    function getBoundsAndScale() {
+      const maxX = Math.max(...framesX.flat());
+      const minX = Math.min(...framesX.flat());
+      const maxY = Math.max(...framesY.flat());
+      const minY = Math.min(...framesY.flat());
+      const maxZ = Math.max(...framesZ.flat());
+      const minZ = Math.min(...framesZ.flat());
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const centerZ = (minZ + maxZ) / 2;
+
+      const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1e-6);
+      // scale so the cloud fits ~60 units cube (tweak as you like)
+      const scale = 60 / maxDim;
+
+      return { centerX, centerY, centerZ, scale };
+    }
+
+    // Create or update the Points object
+    function initPointsIfNeeded() {
+      if (points) return;
+      positions = new Float32Array(N * 3);
+      colors = new Float32Array(N * 3);
+
+      const geom = new THREE.BufferGeometry();
+      posAttr = new THREE.BufferAttribute(positions, 3);
+      colAttr = new THREE.BufferAttribute(colors, 3);
+      geom.setAttribute('position', posAttr);
+      geom.setAttribute('color', colAttr);
+
+      const mat = new THREE.PointsMaterial({
+        size: 0.8,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1.0
+      });
+
+      points = new THREE.Points(geom, mat);
+      scene.add(points);
+    }
+
+    // Per-frame update for positions and colors
+    const tmp = { cx:0, cy:0, cz:0, scale:1 };
+    function updateFrame(k) {
+      const { centerX, centerY, centerZ, scale } = getBoundsAndScale();
+      tmp.scale = scale;
+
+      const angle = Math.PI / 6; // isometric-ish
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+      // For velocity coloring, we need previous frame (use same frame if k==0)
+      const prev = Math.max(k - 1, 0);
+
+      for (let i = 0; i < N; i++) {
+        const x = framesX[k][i] - centerX;
+        const y = framesY[k][i] - centerY;
+        const z = framesZ[k][i] - centerZ;
+
+        // Isometric-ish projection into 3D world space (not screen-space):
+        // We'll place points in a 3D space where X/Z carry the “plan” and Y carries height, so OrbitControls can move around.
+        // Rotate x/y plane a bit for a nice angle.
+        const rx = (x - y) * cosA * scale;
+        const rz = (x + y) * sinA * scale;
+        const ry = z * scale;
+
+        positions[3 * i + 0] = rx;
+        positions[3 * i + 1] = ry;
+        positions[3 * i + 2] = rz;
+
+        // Color by view mode
+        const mode = getViewMode();
+        if (mode === 'depth') {
+          // map ry to 0..1
+          // Find rough normalized height using scale of 60/maxDim => ry ~ [-30, 30]
+          const t = THREE.MathUtils.clamp((ry + 30) / 60, 0, 1);
+          // blue (low) -> white (high)
+          const r = 0.2 + 0.8 * t;
+          const g = 0.2 + 0.8 * t;
+          const b = 1.0 - 0.6 * t;
+          colors[3 * i + 0] = r;
+          colors[3 * i + 1] = g;
+          colors[3 * i + 2] = b;
+        } else if (mode === 'velocity') {
+          const vx = (framesX[k][i] - framesX[prev][i]);
+          const vy = (framesY[k][i] - framesY[prev][i]);
+          const vz = (framesZ[k][i] - framesZ[prev][i]);
+          const v = Math.sqrt(vx * vx + vy * vy + vz * vz);
+
+          // Simple speed → color map (black -> red -> yellow -> white)
+          const t = THREE.MathUtils.clamp(v / 2.0, 0, 1); // adjust denominator for range
+          const r = THREE.MathUtils.lerp(0.1, 1.0, t);
+          const g = THREE.MathUtils.lerp(0.1, 0.9, t * 0.7);
+          const b = THREE.MathUtils.lerp(0.2, 0.2, t);
+          colors[3 * i + 0] = r;
+          colors[3 * i + 1] = g;
+          colors[3 * i + 2] = b;
+        } else {
+          // default
+          colors[3 * i + 0] = 0.95;
+          colors[3 * i + 1] = 0.95;
+          colors[3 * i + 2] = 1.0;
+        }
+      }
+
+      posAttr.needsUpdate = true;
+      colAttr.needsUpdate = true;
+    }
+
+    // Animation loop
+    function tick() {
+      requestAnimationFrame(tick);
+      controls.update();
+      if (playing && framesX) {
+        updateFrame(frameIndex);
+        frameIndex = (frameIndex + 1) % T;
+      }
+      renderer.render(scene, camera);
+    }
+    tick();
+
+    // --- submit handler: fetch sim data and play ---
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // read form data
+      const formData = Object.fromEntries(new FormData(form));
+
+      // initial_state from table
+      const initial_state = [];
+      for (let i = 0; i < table.rows.length; i++) {
+        const row = [];
+        for (let j = 0; j < table.rows[i].cells.length; j++) {
+          const val = parseInt(table.rows[i].cells[j].querySelector('input').value);
+          row.push(isNaN(val) ? 0 : val);
+        }
+        initial_state.push(row);
+      }
+
+      // sanitize numbers
+      const payload = {
+        initial_state,
+        steps: Number(formData.steps),
+        height: Number(formData.height),
+        wind_speed: Number(formData.wind_speed),
+        wind_dir: formData.wind_dir,
+        min_neighbour: Number(formData.min_neighbour),
+        max_neighbour: Number(formData.max_neighbour)
+      };
+
+      const res = await fetch('/simulation/falling_snow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Error JSON:', data);
+        return;
+      }
+
+      // Expecting data: { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z }
+      framesX = data.system_coordinate_history_x;
+      framesY = data.system_coordinate_history_y;
+      framesZ = data.system_coordinate_history_z;
+
+      if (!framesX || !framesY || !framesZ || !framesX.length) {
+        console.error('Bad frames data', data);
+        return;
+      }
+
+      T = framesX.length;
+      N = framesX[0].length;
+
+      initPointsIfNeeded();
+      frameIndex = 0;
+      playing = true;
+      playPauseBtn.textContent = 'Pause';
+    });
+  </script>
+</body>
+</html>
