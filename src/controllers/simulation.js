@@ -1,6 +1,7 @@
 const { falling_snow, cellula_automata,render_video } = require('../models/simulation')
 const { spawn } = require('child_process')
 const { createCanvas } = require('canvas')
+const path = require('path');
 
 exports.falling_snow = (req, res) => {
     let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour} = req.body;

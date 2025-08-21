@@ -31,20 +31,14 @@
         }
 
         function go_login() {
-            setTimeout(() => {
-                window.location.href = `/user/login`;
-            }, 200);
+            window.location.href = `/user/login`;
         }
 
         function go_register() {
-            setTimeout(() => {
-                window.location.href = `/user/register`;
-            }, 200);
+            window.location.href = `/user/register`;
         }
 
         async function go_settings() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
             try {
                 const res = await fetch(`/user/${id}/update`, {
                     method: 'GET',
@@ -65,9 +59,7 @@
         }
 
         function go_simulation() {
-            setTimeout(() => {
-                window.location.href = `/simulation/cloud_simulation`;
-            }, 200);
+            window.location.href = id ? `/simulation/cloud_simulation/?id=${id}` : `/simulation/cloud_simulation`;
         }
 
         async function go_3d_simulation() {

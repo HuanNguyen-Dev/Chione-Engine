@@ -1,21 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Cloud Simulation</title>
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
 
-  <!-- Three.js + OrbitControls -->
-  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
-
   <style>
-    body { margin: 0; background:#111; color:#eee; font-family: system-ui, Arial, sans-serif; }
-    #three { width: 100%; height: 600px; border: 1px solid #222; margin-top: 12px; }
-    form input, form button, form label { margin: 4px 0; }
-    .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: system-ui, Arial, sans-serif;
+    }
+
+    #three {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #222;
+      margin-top: 12px;
+    }
+
+    form input,
+    form button,
+    form label {
+      margin: 4px 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
+
 <body>
   <h2>Cloud Simulation</h2>
 
@@ -47,13 +67,18 @@
   <!-- Three.js canvas host -->
   <div id="three"></div>
 
-  <script>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js';
     // --- form + table helpers ---
     const form = document.getElementById('simulation_form');
     const table = document.getElementById('table');
+    const pathSegments = window.location.pathname.split('/');
+    // pathSegments = ['', 'simulation', '1', 'render_simulation']
 
+    const id = pathSegments[2];
     function go_home() {
-      setTimeout(() => { window.location.href = `/`; }, 200);
+      setTimeout(() => { window.location.href = `/?id=${id}`; }, 200);
     }
 
     function add_row(cols = table.rows[0]?.cells.length || 4) {
@@ -94,7 +119,7 @@
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 5000);
     camera.position.set(40, 30, 40);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     const grid = new THREE.GridHelper(200, 20, 0x333333, 0x222222);
@@ -179,7 +204,7 @@
     }
 
     // Per-frame update for positions and colors
-    const tmp = { cx:0, cy:0, cz:0, scale:1 };
+    const tmp = { cx: 0, cy: 0, cz: 0, scale: 1 };
     function updateFrame(k) {
       const { centerX, centerY, centerZ, scale } = getBoundsAndScale();
       tmp.scale = scale;
@@ -318,4 +343,5 @@
     });
   </script>
 </body>
+
 </html>

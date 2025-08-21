@@ -33,7 +33,14 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+/** For Cross origin resource sharing with cookies:
+ * const cors = require('cors');
 
+app.use(cors({
+  origin: 'http://your-frontend-domain.com', // or http://localhost:5500, etc.
+  credentials: true                          // important for cookies
+}));
+ */
 const tasksRouter = require('./src/routes/tasks');
 const simulationRouter = require('./src/routes/simulation');
 const userRouter = require('./src/routes/user');
@@ -43,8 +50,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use('/tasks', tasksRouter);
-app.use('/simulation',simulationRouter);
-app.use('/user',userRouter);
-app.use('/',indexRouter)
+app.use('/simulation', simulationRouter);
+app.use('/user', userRouter);
+app.use('/', indexRouter)
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

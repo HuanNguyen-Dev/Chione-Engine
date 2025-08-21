@@ -43,11 +43,11 @@
     const form = document.getElementById('simulation_form');
     const table = document.getElementById('table');
     const plot = document.getElementById('falling_snow_simulation');
+    const pathSegments = window.location.pathname.split('/');
 
+    const id = new URLSearchParams(window.location.search).get('id');
     function go_home() {
-      setTimeout(() => {
-        window.location.href = `/`;
-      }, 200);
+      window.location.href = id ? `/?id=${id}` : `/`;
     }
 
     function add_row(cols = table.rows[0]?.cells.length || 3) {

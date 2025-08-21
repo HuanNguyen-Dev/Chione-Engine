@@ -12,6 +12,13 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+exports.getUserCookieInfo = async (req, res) => {
+    if (req.user.username) {
+        return res.json({ username: req.user.username });
+    }
+    else return res.status(404).json({error: "Missing authentication cookies!"})
+}
+
 exports.login = async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
@@ -19,7 +26,7 @@ exports.login = async (req, res) => {
         const user = await User.verifyUser(username, password);
         const authToken = generateAccessToken({ username });
         res.cookie('authToken', authToken, {
-            httpOnly: true,       
+            httpOnly: true,
             secure: false,         // Set to true in production (HTTPS)
             sameSite: 'Strict',
             maxAge: 60 * 60 * 1000 // 1 hour
