@@ -16,13 +16,11 @@ const generateAccessToken = (username) => {
 
 // Middleware to verify a token and respond with user information
 const authenticateToken = (req, res, next) => {
-   // We are using Bearer auth.  The token is in the authorization header.
-   const authHeader = req.headers["authorization"];
-   const token = authHeader && authHeader.split(' ')[1];
-
+   // We are using Bearer auth.  The token is in the cookie
+   const token = req.cookies.authToken; 
    if (!token) {
       console.log("JSON web token missing.");
-      return res.sendStatus(401);
+      return res.status(401).json({error: "JSON web token missing!"});
    }
 
    // Check that the token is valid
@@ -42,7 +40,7 @@ const authenticateToken = (req, res, next) => {
          err.name,
          err.message
       );
-      return res.status(401).json({error: err.message});
+      return res.status(401).json({ error: err.message });
    }
 };
 

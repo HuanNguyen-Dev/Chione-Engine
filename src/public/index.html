@@ -11,12 +11,15 @@
     <form id="index">
         <button type="button" id="settings" onClick="go_settings()" style="display:none">Settings</button>
         <button type="button" onClick="go_simulation()">Cloud Simulation</button>
+        <button type="button" onClick="go_3d_simulation()">3D Render Cloud Simulation</button>
+        <div id="3d" style="color: red; margin-top: 10px;"></div>
         <button type="button" id="login" onclick="go_login()" style="display:none">Login</button>
         <button type="button" id="register" onclick="go_register()" style="display:none">Register</button>
     </form>
 
     <script>
-
+        const messageDiv = document.getElementById('3d');
+        messageDiv.textContent = '';
 
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) {
@@ -42,18 +45,11 @@
         async function go_settings() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
-            const authToken = localStorage.getItem('authToken');
-
-            if (!authToken) {
-                alert('Please log in first!');
-                return;
-            }
             try {
                 const res = await fetch(`/user/${id}/update`, {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
                 });
 
                 if (res.ok) {
@@ -72,6 +68,32 @@
             setTimeout(() => {
                 window.location.href = `/simulation/cloud_simulation`;
             }, 200);
+        }
+
+        async function go_3d_simulation() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            try {
+                const res = await fetch(`/simulation/3d_simulation`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                });
+
+                if (res.ok) {
+                    window.location.href = `/simulation/3d_simulation`;
+                } else {
+                    const err = await res.json();
+                    alert('Access denied: ' + err.error);
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Unauthorized: Please log in!';
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + error.error;
+            }
+
         }
 
 

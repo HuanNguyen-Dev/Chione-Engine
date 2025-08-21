@@ -54,7 +54,7 @@
                 const data = await response.json();
                 messageDiv.style.color = 'green';
                 messageDiv.textContent = 'Successfully logging in..';
-                localStorage.setItem('authToken', data.authToken);
+                // localStorage.setItem('authToken', data.authToken);
                 setTimeout(() => {
                     window.location.href = `/?id=${data.id}`;
                 }, 200);

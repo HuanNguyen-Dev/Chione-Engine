@@ -17,7 +17,14 @@ exports.login = async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
     try {
         const user = await User.verifyUser(username, password);
-        user.authToken = generateAccessToken({ username });
+        const authToken = generateAccessToken({ username });
+        res.cookie('authToken', authToken, {
+            httpOnly: true,       
+            secure: false,         // Set to true in production (HTTPS)
+            sameSite: 'Strict',
+            maxAge: 60 * 60 * 1000 // 1 hour
+        });
+
         return res.status(200).json(user);
     } catch (err) {
         return res.status(400).json({ error: err.message });
