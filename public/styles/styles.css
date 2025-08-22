@@ -56,3 +56,25 @@ header {
 .header-buttons button:hover {
   background: #666;
 }
+
+#randomInit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#randomInit input {
+  width: 80px;
+}
+
+form {
+  margin-bottom: 0; /* remove bottom margin */
+}
+
+#randomInit {
+  margin-top: 10px; /* or lower it to bring forms closer */
+}
+
+.center_container form + form {
+  margin-top: 10px; /* tight spacing between sibling forms */
+}

@@ -14,33 +14,65 @@
   </header>
   <div class="center_container">
     <h2>Cloud Simulation</h2>
-    <form id="simulation_form">
-      Steps: <input type="number" name="steps" value="50"><br>
-      Height: <input type="number" name="height" value="10"><br>
-      Wind Speed: <input type="number" name="wind_speed" value="5"><br>
-      Wind Direction: <label for="wind_dir">Wind Direction:</label>
-      <select name="wind_dir" id="wind_dir">
-        <option value="north">North</option>
-        <option value="south">South</option>
-        <option value="east">East</option>
-        <option value="west">West</option>
-      </select>
-      <br>
-      Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value="3"><br>
-      Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value="8"><br>
-      Initial State (Binary Only): <table id="table"></table>
-      <button type="button" onClick="add_row()">Add Row</button>
-      <button type="button" onClick="add_col()">Add Column</button>
+    <form id="simulation_form" style="margin-bottom: 5px;">
+      <div class="row">
+        <label for="steps">Steps:</label>
+        <input type="number" name="steps" id="steps" value="50" required>
+      </div>
 
-      <input type="radio" id="velocity" name="view" value="velocity">
-      <label for="velocity">View Velocity</label><br>
+      <div class="row">
+        <label for="height">Height:</label>
+        <input type="number" name="height" id="height" value="10" required>
+      </div>
 
-      <input type="radio" id="depth" name="view" value="depth">
-      <label for="depth">View Depth</label><br>
+      <div class="row">
+        <label for="wind_speed">Wind Speed:</label>
+        <input type="number" name="wind_speed" id="wind_speed" value="5">
+      </div>
 
-      <input type="radio" id="none" name="view" value="default">
-      <label for="default">Default View</label><br>
+      <div class="row">
+        <label for="wind_dir">Wind Direction:</label>
+        <select name="wind_dir" id="wind_dir">
+          <option value="north">North</option>
+          <option value="south">South</option>
+          <option value="east">East</option>
+          <option value="west">West</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="min_neighbour">Minimum Neighbour (To Survive):</label>
+        <input type="number" name="min_neighbour" id="min_neighbour" value="3" required>
+      </div>
 
+      <div class="row">
+        <label for="max_neighbour">Maximum Neighbour (To Survive):</label>
+        <input type="number" name="max_neighbour" id="max_neighbour" value="8" required>
+      </div>
+      <div class="row">
+        Initial State (Binary Only):
+        <table id="table"></table>
+        <button type="button" onclick="add_row()">Add Row</button>
+        <button type="button" onclick="add_col()">Add Column</button>
+      </div>
+
+      <div>
+        <input type="radio" id="velocity" name="view" value="velocity">
+        <label for="velocity">View Velocity</label><br>
+
+        <input type="radio" id="depth" name="view" value="depth">
+        <label for="depth">View Depth</label><br>
+
+        <input type="radio" id="none" name="view" value="default">
+        <label for="none">Default View</label><br>
+      </div>
+      <div id="randomInit">
+        <div class="row">
+          <label for="size">Randomly Initialise (max 50×50):</label>
+          <input type="number" name="size" id="size" min="1" max="50" required>
+        </div>
+        <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
+        <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
+      </div>
       <button type="submit">Run Simulation</button>
     </form>
   </div>
@@ -49,10 +81,11 @@
 
   <script>
     const form = document.getElementById('simulation_form');
+    const randomInitializationForm = document.getElementById('randomInit')
     const table = document.getElementById('table');
     const plot = document.getElementById('falling_snow_simulation');
     const pathSegments = window.location.pathname.split('/');
-
+    const randomSizeInput = document.querySelector('#randomInit input[name="size"]');
     const id = new URLSearchParams(window.location.search).get('id');
     function go_home() {
       window.location.href = id ? `/?id=${id}` : `/`;
@@ -66,6 +99,9 @@
         const input = document.createElement('input');
         input.type = 'number';
         input.value = 0;
+        input.min = 0;
+        input.max = 1;
+        input.step = 1;
         new_cell.appendChild(input);
       }
     }
@@ -76,6 +112,9 @@
         const input = document.createElement('input');
         input.type = 'number';
         input.value = 0;
+        input.min = 0;
+        input.max = 1;
+        input.step = 1;
         new_cell.appendChild(input);
       }
     }
@@ -84,27 +123,9 @@
       for (let i = 0; i < row; i++) add_row(col);
     }
 
-    initialise_table(4, 4);
-
-
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    function readInitializationVariables(initial_state) {
       // turn KVP into objects
       const formData = Object.fromEntries(new FormData(form));
-
-      // retreive inital state from table
-      const initial_state = [];
-      for (let i = 0; i < table.rows.length; i++) {
-        const row = [];
-        for (let j = 0; j < table.rows[i].cells.length; j++) {
-          const input_state = table.rows[i].cells[j].querySelector('input').value;
-          row.push(parseInt(input_state))
-        }
-        initial_state.push(row)
-      }
-      //  initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour 
-      // create fetch response based on user input
       formData.initial_state = initial_state;
       formData.steps = Number(formData.steps);
       formData.height = Number(formData.height);
@@ -112,13 +133,74 @@
       formData.wind_dir = formData.wind_dir;
       formData.min_neighbour = Number(formData.min_neighbour);
       formData.max_neighbour = Number(formData.max_neighbour);
+      return formData;
+    }
 
-
+    async function fetchSimulationVideo(formData) {
       const res = await fetch('/simulation/falling_snow_video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
+      return res;
+    }
+
+    async function getUser() {
+      try {
+        const userData = await fetch(`/user/me`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: "include",
+        })
+        if (userData.ok) {
+          return true;
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    }
+    initialise_table(4, 4);
+
+    async function randomInitialization() {
+
+      const messageDiv = document.getElementById('randomInitDiv');
+      messageDiv.textContent = '';
+      const isUser = await getUser();
+      if (!isUser) {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'Please enter both username and password.';
+        return;
+      }
+      const dim = Number(randomSizeInput.value);
+      if (dim < 1 || dim > 50) {
+        messageDiv.textContent = "Size must be between 1 and 50.";
+        return;
+      }
+      const randomState = Array.from({ length: dim }, () =>
+        Array.from({ length: dim }, () => Math.random() > 0.5 ? 1 : 0)
+      );
+      const formData = readInitializationVariables(randomState);
+      const res = await fetchSimulationVideo(formData);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      document.getElementById("video").src = url;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // retreive inital state from table into an array
+      const initial_state = Array.from(table.rows).map(row =>
+        Array.from(row.cells).map(cell =>
+          parseInt(cell.querySelector('input').value, 10)
+        )
+      );
+      //  initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour 
+      // create fetch response based on user input
+      const formData = readInitializationVariables(initial_state);
+
+      const res = await fetchSimulationVideo(formData);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       document.getElementById("video").src = url;
