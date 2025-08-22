@@ -397,8 +397,9 @@ async function render_video(params, writeStream) {
             const x = framesX[t][p] - centerX;
             const y = framesY[t][p] - centerY;
             const z = framesZ[t][p] - centerZ;
-
-            const scale = 1 / (1 + z * 0.05);
+            const minSize = 0.5; 
+            const denom = Math.max(minSize, 1 - z * 0.05);;
+            const scale = 1 / denom;
             const screenX = (x - y) * Math.cos(angle) * baseScale + width / 2;
             const screenY = (x + y) * Math.sin(angle) * baseScale - z * baseScale + heightPx / 2;
 
@@ -426,7 +427,8 @@ async function render_video(params, writeStream) {
                 // if (velocities) frameVel.push(speed);
             }
             else {
-                const brightness = Math.min(255, 150 + z * 10);
+                const base = 100; // minimum brightness (dark grey)
+                const brightness = Math.min(255, Math.max(base, 150 + z * 10));
                 ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
             }
 
