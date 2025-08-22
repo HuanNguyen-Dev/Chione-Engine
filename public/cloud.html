@@ -5,37 +5,36 @@
   <meta charset="UTF-8">
   <title>Cloud Simulation</title>
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-
-
-
+  <link rel="stylesheet" href="/styles/styles.css" />
 </head>
 
 <body>
-  <h2>Cloud Simulation</h2>
-  <form id="simulation_form">
-    Steps: <input type="number" name="steps" value="50"><br>
-    Height: <input type="number" name="height" value="10"><br>
-    Wind Speed: <input type="number" name="wind_speed" value="5"><br>
-    Wind Direction: <input type="text" name="wind_dir" value="north"><br>
-    Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value="3"><br>
-    Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value="8"><br>
-    Initial State (Binary Only): <table id="table"></table>
+  <div class="center_container">
+    <h2>Cloud Simulation</h2>
+    <button type="button" id="register" onclick="go_home()">Home Page</button>
+    <form id="simulation_form">
+      Steps: <input type="number" name="steps" value="50"><br>
+      Height: <input type="number" name="height" value="10"><br>
+      Wind Speed: <input type="number" name="wind_speed" value="5"><br>
+      Wind Direction: <input type="text" name="wind_dir" value="north"><br>
+      Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value="3"><br>
+      Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value="8"><br>
+      Initial State (Binary Only): <table id="table"></table>
+      <button type="button" onClick="add_row()">Add Row</button>
+      <button type="button" onClick="add_col()">Add Column</button>
 
-    <button type="button" onClick="add_row()">Add Row</button>
-    <button type="button" onClick="add_col()">Add Column</button>
+      <input type="radio" id="velocity" name="view" value="velocity">
+      <label for="velocity">View Velocity</label><br>
 
-    <input type="radio" id="velocity" name="view" value="velocity">
-    <label for="velocity">View Velocity</label><br>
+      <input type="radio" id="depth" name="view" value="depth">
+      <label for="depth">View Depth</label><br>
 
-    <input type="radio" id="depth" name="view" value="depth">
-    <label for="depth">View Depth</label><br>
+      <input type="radio" id="none" name="view" value="default">
+      <label for="default">Default View</label><br>
 
-    <input type="radio" id="none" name="view" value="default">
-    <label for="default">Default View</label><br>
-
-    <button type="submit">Run Simulation</button>
-  </form>
-  <button type="button" id="register" onclick="go_home()">Home Page</button>
+      <button type="submit">Run Simulation</button>
+    </form>
+  </div>
 
   <video id="video" controls autoplay style="width:100%; height:600px;"></video>
 
