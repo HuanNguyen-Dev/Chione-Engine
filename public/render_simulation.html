@@ -1,3 +1,4 @@
+  <!-- CHATGPT GENERATED -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -70,6 +71,7 @@
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
     import { OrbitControls } from '/js/OrbitControls_fixed.js';
+    const alphaMap = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/circle.png');
 
     document.getElementById("home").addEventListener("click", () => {
       window.location.href = `/?id=${id}`;
@@ -150,6 +152,8 @@
     let framesX = null, framesY = null, framesZ = null;
     let T = 0, N = 0;
     let frameIndex = 0;
+    const frameDelay = 3;
+    let frameCounter = 0;
     let playing = true;
     const playPauseBtn = document.getElementById('playPauseBtn');
     playPauseBtn.onclick = () => { playing = !playing; playPauseBtn.textContent = playing ? 'Pause' : 'Play'; };
@@ -207,11 +211,14 @@
       geom.setAttribute('color', colAttr);
 
       const mat = new THREE.PointsMaterial({
-        size: 0.8,
+        size: 2.4,
         sizeAttenuation: true,
         vertexColors: true,
         transparent: true,
-        opacity: 1.0
+        opacity: 0.67,
+        depthWrite: false,
+        alphaMap: alphaMap,
+        alphaTest: 0.01
       });
 
       points = new THREE.Points(geom, mat);
@@ -305,8 +312,11 @@
       requestAnimationFrame(tick);
       controls.update();
       if (playing && framesX) {
-        updateFrame(frameIndex);
-        frameIndex = (frameIndex + 1) % T;
+        if (frameCounter === 0) {
+          updateFrame(frameIndex);
+          frameIndex = (frameIndex + 1) % T;
+        }
+        frameCounter = (frameCounter + 1) % frameDelay;
       }
       renderer.render(scene, camera);
     }

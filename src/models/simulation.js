@@ -144,7 +144,7 @@ function calculate_thresholds(wind_dir, wind_speed) {
     let prob_down = 0.25;
     // scale down other thresholds accordingly
     let left_over_prob = (1 - wind_factor) / 3;
-    switch ((wind_dir).toLowerCase()) {
+    switch ((wind_dir ? wind_dir.toLowerCase() : 'default')) {
         case 'north':
             prob_left = prob_right = prob_down = left_over_prob;
             prob_up = wind_factor;
@@ -176,7 +176,7 @@ function calculate_windspeed_factor(wind_speed) {
 }
 
 function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
-    const delta = 1;
+    const delta = Math.random();
 
     let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
     let random_walks_x = [];
