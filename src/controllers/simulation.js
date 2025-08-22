@@ -50,11 +50,7 @@ exports.falling_snow_video = async (req, res) => {
 
 exports.showRenderPage = async (req, res) => {
     try {
-<<<<<<< HEAD
-        res.sendFile(path.join(__dirname, '..', 'public', 'render_simulation.html'));
-=======
         res.sendFile(path.join(__dirname, '..','..','public', 'render_simulation.html'));
->>>>>>> cookies
     } catch (err) {
         console.error("Error loading delete page:", err);
         res.status(500).send('Server error');
