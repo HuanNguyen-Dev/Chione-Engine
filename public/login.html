@@ -21,6 +21,10 @@
             window.location.href = `/`;
         }
 
+        const params = new URLSearchParams(window.location.search);
+        const error = params.get('error');
+        if (error) alert('Session expired. Please log in again.');
+
         const form = document.getElementById('login');
 
         form.addEventListener('submit', async (e) => {

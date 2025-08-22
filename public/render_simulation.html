@@ -59,7 +59,7 @@
       <label><input type="radio" name="view" value="depth"> View Depth</label>
       <label><input type="radio" name="view" value="default" checked> Default View</label>
       <button type="submit">Run Simulation</button>
-      <button type="button" id="register" onclick="go_home()">Home Page</button>
+      <button type="button" onclick="go_home()">Home Page</button>
       <button type="button" id="playPauseBtn">Pause</button>
     </div>
   </form>
@@ -69,7 +69,11 @@
 
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+    import { OrbitControls } from '/js/OrbitControls_fixed.js';
+
+    function go_home() {
+      window.location.href = `/?id=${id}`;
+    }
     // --- form + table helpers ---
     const form = document.getElementById('simulation_form');
     const table = document.getElementById('table');
@@ -77,9 +81,6 @@
     // pathSegments = ['', 'simulation', '1', 'render_simulation']
 
     const id = pathSegments[2];
-    function go_home() {
-      setTimeout(() => { window.location.href = `/?id=${id}`; }, 200);
-    }
 
     function add_row(cols = table.rows[0]?.cells.length || 4) {
       const row = table.insertRow();
@@ -214,55 +215,67 @@
 
       // For velocity coloring, we need previous frame (use same frame if k==0)
       const prev = Math.max(k - 1, 0);
-
+      const frameN = framesX[k].length;
       for (let i = 0; i < N; i++) {
-        const x = framesX[k][i] - centerX;
-        const y = framesY[k][i] - centerY;
-        const z = framesZ[k][i] - centerZ;
+        if (i < frameN) {
+          const x = framesX[k][i] - centerX;
+          const y = framesY[k][i] - centerY;
+          const z = framesZ[k][i] - centerZ;
 
-        // Isometric-ish projection into 3D world space (not screen-space):
-        // We'll place points in a 3D space where X/Z carry the “plan” and Y carries height, so OrbitControls can move around.
-        // Rotate x/y plane a bit for a nice angle.
-        const rx = (x - y) * cosA * scale;
-        const rz = (x + y) * sinA * scale;
-        const ry = z * scale;
+          // Isometric-ish projection into 3D world space (not screen-space):
+          // We'll place points in a 3D space where X/Z carry the “plan” and Y carries height, so OrbitControls can move around.
+          // Rotate x/y plane a bit for a nice angle.
+          const rx = (x - y) * cosA * scale;
+          const rz = (x + y) * sinA * scale;
+          const ry = z * scale;
 
-        positions[3 * i + 0] = rx;
-        positions[3 * i + 1] = ry;
-        positions[3 * i + 2] = rz;
+          positions[3 * i + 0] = rx;
+          positions[3 * i + 1] = ry;
+          positions[3 * i + 2] = rz;
 
-        // Color by view mode
-        const mode = getViewMode();
-        if (mode === 'depth') {
-          // map ry to 0..1
-          // Find rough normalized height using scale of 60/maxDim => ry ~ [-30, 30]
-          const t = THREE.MathUtils.clamp((ry + 30) / 60, 0, 1);
-          // blue (low) -> white (high)
-          const r = 0.2 + 0.8 * t;
-          const g = 0.2 + 0.8 * t;
-          const b = 1.0 - 0.6 * t;
-          colors[3 * i + 0] = r;
-          colors[3 * i + 1] = g;
-          colors[3 * i + 2] = b;
-        } else if (mode === 'velocity') {
-          const vx = (framesX[k][i] - framesX[prev][i]);
-          const vy = (framesY[k][i] - framesY[prev][i]);
-          const vz = (framesZ[k][i] - framesZ[prev][i]);
-          const v = Math.sqrt(vx * vx + vy * vy + vz * vz);
+          // Color by view mode
+          const mode = getViewMode();
+          if (mode === 'depth') {
+            // map ry to 0..1
+            // Find rough normalized height using scale of 60/maxDim => ry ~ [-30, 30]
+            const t = THREE.MathUtils.clamp((ry + 30) / 60, 0, 1);
+            // blue (low) -> white (high)
+            const r = 0.2 + 0.8 * t;
+            const g = 0.2 + 0.8 * t;
+            const b = 1.0 - 0.6 * t;
+            colors[3 * i + 0] = r;
+            colors[3 * i + 1] = g;
+            colors[3 * i + 2] = b;
+          } else if (mode === 'velocity') {
+            const vx = (framesX[k][i] - framesX[prev][i]);
+            const vy = (framesY[k][i] - framesY[prev][i]);
+            const vz = (framesZ[k][i] - framesZ[prev][i]);
+            const v = Math.sqrt(vx * vx + vy * vy + vz * vz);
 
-          // Simple speed → color map (black -> red -> yellow -> white)
-          const t = THREE.MathUtils.clamp(v / 2.0, 0, 1); // adjust denominator for range
-          const r = THREE.MathUtils.lerp(0.1, 1.0, t);
-          const g = THREE.MathUtils.lerp(0.1, 0.9, t * 0.7);
-          const b = THREE.MathUtils.lerp(0.2, 0.2, t);
-          colors[3 * i + 0] = r;
-          colors[3 * i + 1] = g;
-          colors[3 * i + 2] = b;
-        } else {
-          // default
-          colors[3 * i + 0] = 0.95;
-          colors[3 * i + 1] = 0.95;
-          colors[3 * i + 2] = 1.0;
+            // Simple speed → color map (black -> red -> yellow -> white)
+            const t = THREE.MathUtils.clamp(v / 2.0, 0, 1); // adjust denominator for range
+            const r = THREE.MathUtils.lerp(0.1, 1.0, t);
+            const g = THREE.MathUtils.lerp(0.1, 0.9, t * 0.7);
+            const b = THREE.MathUtils.lerp(0.2, 0.2, t);
+            colors[3 * i + 0] = r;
+            colors[3 * i + 1] = g;
+            colors[3 * i + 2] = b;
+          } else {
+            // default
+            colors[3 * i + 0] = 0.95;
+            colors[3 * i + 1] = 0.95;
+            colors[3 * i + 2] = 1.0;
+          }
+        }
+        else {
+          // Hide extra particles for this frame --> hide the padded particles
+          positions[3 * i + 0] = 1e6;
+          positions[3 * i + 1] = 1e6;
+          positions[3 * i + 2] = 1e6;
+
+          colors[3 * i + 0] = 0;
+          colors[3 * i + 1] = 0;
+          colors[3 * i + 2] = 0;
         }
       }
 
@@ -285,7 +298,12 @@
     // --- submit handler: fetch sim data and play ---
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
+      if (points) {
+        scene.remove(points);
+        points.geometry.dispose();
+        points.material.dispose();
+        points = null;
+      }
       // read form data
       const formData = Object.fromEntries(new FormData(form));
 
@@ -334,7 +352,11 @@
       }
 
       T = framesX.length;
-      N = framesX[0].length;
+      let maxN = 0;
+      for (let k = 0; k < framesX.length; k++) {
+        maxN = Math.max(maxN, framesX[k].length);
+      }
+      N = maxN;
 
       initPointsIfNeeded();
       frameIndex = 0;

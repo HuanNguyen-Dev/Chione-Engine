@@ -77,7 +77,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.showDeletePage = async (req, res) => {
     try {
-        res.sendFile(path.join(__dirname, '..', 'public', 'option.html'));
+        res.sendFile(path.join(__dirname, '..','..','public', 'option.html'));
     } catch (err) {
         console.error("Error loading delete page:", err);
         res.status(500).send('Server error');
@@ -85,9 +85,9 @@ exports.showDeletePage = async (req, res) => {
 };
 
 exports.showRegisterPage = (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'register.html'));
+    res.sendFile(path.join(__dirname, '..','..','public', 'register.html'));
 };
 
 exports.showLoginPage = (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+    res.sendFile(path.join(__dirname, '..', '..','public', 'login.html'));
 };

@@ -8,6 +8,9 @@
 </head>
 
 <body>
+    <div id="welcome">
+        <h1><strong>Welcome To Bon's Cloud Simulation:</strong></h1>
+    </div>
     <form id="index">
         <button type="button" id="settings" onClick="go_settings()" style="display:none">Settings</button>
         <button type="button" onClick="go_simulation()">Cloud Simulation</button>
@@ -22,6 +25,38 @@
         messageDiv.textContent = '';
 
         const id = new URLSearchParams(window.location.search).get('id');
+        async function getUser() {
+            try {
+                const userData = await fetch(`/user/me`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                })
+                if (userData.ok) {
+                    return userData.json();
+                }
+                return false;
+            } catch {
+                return false;
+            }
+        }
+
+        (async function () {
+            const user = await getUser();
+            const userInfoDiv = document.getElementById('welcome');
+
+            if (user) {
+                // OR: Display specific fields
+                userInfoDiv.innerHTML = `
+                    <h1><strong>Welcome ${user.username}, To Bon's Cloud Simulation:</strong></h1>
+                `;
+            } else {
+                if (!user && id) window.location.href = `/`;
+                userInfoDiv.innerHTML = `
+                    <h1><strong>Welcome To Bon's Cloud Simulation:</strong></h1>
+                    <h4>Please log in to access all features</h4>`;
+            }
+        })();
         if (id) {
             document.getElementById('settings').style.display = 'inline-block';
         }

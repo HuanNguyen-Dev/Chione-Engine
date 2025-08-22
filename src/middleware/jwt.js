@@ -40,7 +40,7 @@ const authenticateToken = (req, res, next) => {
          err.name,
          err.message
       );
-      return res.status(401).json({ error: err.message });
+      return res.status(401).json({ error: 'token_expired', redirect: '/user/login?error=token_expired' });
    }
 };
 
