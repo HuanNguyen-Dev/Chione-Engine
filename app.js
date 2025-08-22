@@ -16,6 +16,7 @@
 // npm install expressdo
 // npm install plotly.js
 // npm install canvas gl three
+// npm install cookie-parser
 // win + r, services.msc, mysql92 stop to get port 3306 free
 
 // // scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
@@ -32,17 +33,25 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
+/** For Cross origin resource sharing with cookies:
+ * const cors = require('cors');
 
+app.use(cors({
+  origin: 'http://your-frontend-domain.com', // or http://localhost:5500, etc.
+  credentials: true                          // important for cookies
+}));
+ */
 const tasksRouter = require('./src/routes/tasks');
 const simulationRouter = require('./src/routes/simulation');
 const userRouter = require('./src/routes/user');
 const indexRouter = require('./src/routes/index');
-
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use('/tasks', tasksRouter);
-app.use('/simulation',simulationRouter);
-app.use('/user',userRouter);
-app.use('/',indexRouter)
+app.use('/simulation', simulationRouter);
+app.use('/user', userRouter);
+app.use('/', indexRouter)
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

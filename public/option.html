@@ -23,36 +23,23 @@
     <button type="button" onclick="go_home()">Go Back Home</button>
     <div id="delete_user" style="color: red; margin-top: 10px;"></div>
     <script>
-        const authToken = localStorage.getItem('authToken');
 
         const messageDiv = document.getElementById('update_password');
         messageDiv.textContent = '';
-        if (!authToken) {
-            alert('Please log in!');
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 200);
-        }
+        const pathSegments = window.location.pathname.split('/');
+        // pathSegments = ['', 'user', '1', 'update']
 
+        const id = pathSegments[2];
         function go_home() {
-            window.location.href = `/`;
+            window.location.href = `/?id=${id}`;
         }
 
         async function delete_user() {
-
-            // const params = new URLSearchParams(window.location.search);
-            // const id = params.get('id');
-            const pathSegments = window.location.pathname.split('/');
-            // pathSegments = ['', 'user', '1', 'update']
-
-            const id = pathSegments[2]; 
             try {
                 const response = await fetch(`/user/${id}/delete`, {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
                     body: JSON.stringify({ reason: 'No longer needed' })
                 })
                 if (!response.ok) {
@@ -69,7 +56,6 @@
 
                 messageDiv.style.color = 'green';
                 messageDiv.textContent = 'Account deleted. Redirecting to login...';
-                localStorage.removeItem('authToken');
 
                 setTimeout(() => {
                     window.location.href = '/user/login';
@@ -114,10 +100,8 @@
             try {
                 const response = await fetch(`/user/${id}/update`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
                     body: JSON.stringify(user_data)
                 });
                 if (!response.ok) {

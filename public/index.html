@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome To Bon's Cloud Simulation</title>
+
+</head>
+
+<body>
+    <div id="welcome">
+        <h1><strong>Welcome To Bon's Cloud Simulation:</strong></h1>
+    </div>
+    <form id="index">
+        <button type="button" id="settings" onClick="go_settings()" style="display:none">Settings</button>
+        <button type="button" onClick="go_simulation()">Cloud Simulation</button>
+        <button type="button" onClick="go_3d_simulation()">3D Render Cloud Simulation</button>
+        <div id="3d" style="color: red; margin-top: 10px;"></div>
+        <button type="button" id="login" onclick="go_login()" style="display:none">Login</button>
+        <button type="button" id="register" onclick="go_register()" style="display:none">Register</button>
+    </form>
+
+    <script>
+        const messageDiv = document.getElementById('3d');
+        messageDiv.textContent = '';
+
+        const id = new URLSearchParams(window.location.search).get('id');
+        async function getUser() {
+            try {
+                const userData = await fetch(`/user/me`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                })
+                if (userData.ok) {
+                    return userData.json();
+                }
+                return false;
+            } catch {
+                return false;
+            }
+        }
+
+        (async function () {
+            const user = await getUser();
+            const userInfoDiv = document.getElementById('welcome');
+
+            if (user) {
+                // OR: Display specific fields
+                userInfoDiv.innerHTML = `
+                    <h1><strong>Welcome ${user.username}, To Bon's Cloud Simulation:</strong></h1>
+                `;
+            } else {
+                if (!user && id) window.location.href = `/`;
+                userInfoDiv.innerHTML = `
+                    <h1><strong>Welcome To Bon's Cloud Simulation:</strong></h1>
+                    <h4>Please log in to access all features</h4>`;
+            }
+        })();
+        if (id) {
+            document.getElementById('settings').style.display = 'inline-block';
+        }
+        else {
+            document.getElementById('login').style.display = 'inline-block';
+            document.getElementById('register').style.display = 'inline-block';
+        }
+
+        function go_login() {
+            window.location.href = `/user/login`;
+        }
+
+        function go_register() {
+            window.location.href = `/user/register`;
+        }
+
+        async function go_settings() {
+            try {
+                const res = await fetch(`/user/${id}/update`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                });
+
+                if (res.ok) {
+                    window.location.href = `/user/${id}/update`;
+                } else {
+                    const err = await res.json();
+                    alert('Access denied: ' + err.error);
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+            }
+
+        }
+
+        function go_simulation() {
+            window.location.href = id ? `/simulation/cloud_simulation/?id=${id}` : `/simulation/cloud_simulation`;
+        }
+
+        async function go_3d_simulation() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            try {
+                const res = await fetch(`/simulation/3d_simulation`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                });
+
+                if (res.ok) {
+                    window.location.href = `/simulation/3d_simulation`;
+                } else {
+                    const err = await res.json();
+                    alert('Access denied: ' + err.error);
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Unauthorized: Please log in!';
+                }
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + error.error;
+            }
+
+        }
+
+
+    </script>
+</body>
+
+</html>
