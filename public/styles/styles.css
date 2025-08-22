@@ -26,3 +26,33 @@ body {
   min-height: 100vh;
   gap: 16px;
 }
+
+header {
+  background: #222;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #eee;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.header-buttons button {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.header-buttons button:hover {
+  background: #666;
+}

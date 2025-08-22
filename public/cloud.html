@@ -9,14 +9,23 @@
 </head>
 
 <body>
+  <header>
+    <button type="button" id="register" onclick="go_home()">Home Page</button>
+  </header>
   <div class="center_container">
     <h2>Cloud Simulation</h2>
-    <button type="button" id="register" onclick="go_home()">Home Page</button>
     <form id="simulation_form">
       Steps: <input type="number" name="steps" value="50"><br>
       Height: <input type="number" name="height" value="10"><br>
       Wind Speed: <input type="number" name="wind_speed" value="5"><br>
-      Wind Direction: <input type="text" name="wind_dir" value="north"><br>
+      Wind Direction: <label for="wind_dir">Wind Direction:</label>
+      <select name="wind_dir" id="wind_dir">
+        <option value="north">North</option>
+        <option value="south">South</option>
+        <option value="east">East</option>
+        <option value="west">West</option>
+      </select>
+      <br>
       Minimum Neighbour (To Survive): <input type="number" name="min_neighbour" value="3"><br>
       Maximum Neighbour (To Survive): <input type="number" name="max_neighbour" value="8"><br>
       Initial State (Binary Only): <table id="table"></table>

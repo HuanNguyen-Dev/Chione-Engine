@@ -35,7 +35,7 @@
         function go_home() {
             window.location.href = `/?id=${id}`;
         }
-
+        
         async function delete_user() {
             try {
                 const response = await fetch(`/user/${id}/delete`, {

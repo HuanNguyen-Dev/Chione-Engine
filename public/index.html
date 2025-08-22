@@ -9,22 +9,24 @@
 </head>
 
 <body>
-    <div class="center_container">
-        <div id="welcome">
-            <h1><strong>Welcome To Bon's Cloud Simulation:</strong></h1>
-        </div>
-        <form id="index">
+    <header>
+        <div class="header-buttons">
             <button type="button" id="settings" onClick="go_settings()" style="display:none">Settings</button>
             <button type="button" onClick="go_simulation()">Cloud Simulation</button>
             <button type="button" onClick="go_3d_simulation()">3D Render Cloud Simulation</button>
-            <div id="3d" style="color: red; margin-top: 10px;"></div>
             <button type="button" id="login" onclick="go_login()" style="display:none">Login</button>
             <button type="button" id="register" onclick="go_register()" style="display:none">Register</button>
-        </form>
+        </div>
+    </header>
+    <div class="center_container">
+        <div id="welcome">
+            <h1><strong>Welcome To Bon's Cloud Simulation</strong></h1>
+            <div id="error" style="color: red; margin-top: 10px;"></div>
+        </div>
     </div>
 
     <script>
-        const messageDiv = document.getElementById('3d');
+        const messageDiv = document.getElementById('error');
         messageDiv.textContent = '';
 
         const id = new URLSearchParams(window.location.search).get('id');

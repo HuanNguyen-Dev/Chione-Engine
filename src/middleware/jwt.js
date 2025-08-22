@@ -17,10 +17,10 @@ const generateAccessToken = (username) => {
 // Middleware to verify a token and respond with user information
 const authenticateToken = (req, res, next) => {
    // We are using Bearer auth.  The token is in the cookie
-   const token = req.cookies.authToken; 
+   const token = req.cookies.authToken;
    if (!token) {
       console.log("JSON web token missing.");
-      return res.status(401).json({error: "JSON web token missing!"});
+      return res.redirect('/user/login?error=no_token');
    }
 
    // Check that the token is valid
@@ -40,8 +40,12 @@ const authenticateToken = (req, res, next) => {
          err.name,
          err.message
       );
-      return res.status(401).json({ error: 'token_expired', redirect: '/user/login?error=token_expired' });
+      if (err.name === 'TokenExpiredError') {
+         return res.redirect('/user/login?error=token_expired');
+      }
+      return res.redirect('/user/login?error=invalid_token');
    }
 };
+
 
 module.exports = { generateAccessToken, authenticateToken };
