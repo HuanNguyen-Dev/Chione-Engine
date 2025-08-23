@@ -68,11 +68,11 @@
       <div id="randomInit">
         <div class="row">
           <label for="size">Randomly Initialise (max 50×50):</label>
-          <input type="number" name="size" id="size" min="1" max="50" required>
+          <input type="number" name="size" id="size" min="1" max="50">
         </div>
         <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
-        <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
       </div>
+      <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
       <button type="submit">Run Simulation</button>
     </form>
   </div>
@@ -92,7 +92,7 @@
     }
 
     function add_row(cols = table.rows[0]?.cells.length || 3) {
-
+      if (table.rows[0]?.cells.length > 50) return;
       const row = table.insertRow();
       for (let i = 0; i < cols; i++) {
         const new_cell = row.insertCell();
@@ -107,6 +107,7 @@
     }
 
     function add_col() {
+      if (tables.rows.length > 50) return;
       for (let i = 0; i < table.rows.length; i++) {
         const new_cell = table.rows[i].insertCell();
         const input = document.createElement('input');
@@ -169,7 +170,7 @@
       const isUser = await getUser();
       if (!isUser) {
         messageDiv.style.color = 'red';
-        messageDiv.textContent = 'Please enter both username and password.';
+        messageDiv.textContent = 'You must log in to access this feature!';
         return;
       }
       const dim = Number(randomSizeInput.value);

@@ -337,145 +337,152 @@ function meets_survival_condition(live_neighbours, min_neighbour, max_neighbour)
 }
 
 function findBoundaries(x, y, z) {
-        let maxX = -Infinity, minX = Infinity;
-        let maxY = -Infinity, minY = Infinity;
-        let maxZ = -Infinity, minZ = Infinity;
+    let maxX = -Infinity, minX = Infinity;
+    let maxY = -Infinity, minY = Infinity;
+    let maxZ = -Infinity, minZ = Infinity;
 
-        for (let frame = 0; frame < x.length; frame++) {
-            const xs = x[frame];
-            const ys = y[frame];
-            const zs = z[frame];
+    for (let frame = 0; frame < x.length; frame++) {
+        const xs = x[frame];
+        const ys = y[frame];
+        const zs = z[frame];
 
-            for (let i = 0; i < xs.length; i++) {
-                if (xs[i] > maxX) maxX = xs[i];
-                if (xs[i] < minX) minX = xs[i];
+        for (let i = 0; i < xs.length; i++) {
+            if (xs[i] > maxX) maxX = xs[i];
+            if (xs[i] < minX) minX = xs[i];
 
-                if (ys[i] > maxY) maxY = ys[i];
-                if (ys[i] < minY) minY = ys[i];
+            if (ys[i] > maxY) maxY = ys[i];
+            if (ys[i] < minY) minY = ys[i];
 
-                if (zs[i] > maxZ) maxZ = zs[i];
-                if (zs[i] < minZ) minZ = zs[i];
-            }
+            if (zs[i] > maxZ) maxZ = zs[i];
+            if (zs[i] < minZ) minZ = zs[i];
         }
-        return {maxX,minX,maxY,minY,maxZ,minZ};
     }
+    return { maxX, minX, maxY, minY, maxZ, minZ };
+}
+// CHATGPT
+async function render_video(params, writeStream) {
+    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour, view = "default" } = params;
 
-    async function render_video(params, writeStream) {
-        let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour, view = "default" } = params;
+    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) throw new Error("Invalid parameters");
 
-        if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) throw new Error("Invalid parameters");
+    // run simulation
+    const sim = falling_snow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
+    const framesX = sim.system_coordinate_history_x;
+    const framesY = sim.system_coordinate_history_y;
+    const framesZ = sim.system_coordinate_history_z;
 
-        // run simulation
-        const sim = falling_snow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
-        const framesX = sim.system_coordinate_history_x;
-        const framesY = sim.system_coordinate_history_y;
-        const framesZ = sim.system_coordinate_history_z;
+    const width = 800, heightPx = 600;
+    const canvas = createCanvas(width, heightPx);
+    const ctx = canvas.getContext('2d');
 
-        const width = 800, heightPx = 600;
-        const canvas = createCanvas(width, heightPx);
-        const ctx = canvas.getContext('2d');
+    // spawn ffmpeg
+    const ffmpeg = spawn('ffmpeg', [
+        '-y',
+        '-f', 'image2pipe',
+        '-vcodec', 'png',
+        '-r', '20',
+        '-i', '-',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-movflags', 'frag_keyframe+faststart',
+        '-f', 'mp4',
+        'pipe:1'
+    ]);
 
-        // spawn ffmpeg
-        const ffmpeg = spawn('ffmpeg', [
-            '-y',
-            '-f', 'image2pipe',
-            '-vcodec', 'png',
-            '-r', '20',
-            '-i', '-',
-            '-c:v', 'libx264',
-            '-pix_fmt', 'yuv420p',
-            '-movflags', 'frag_keyframe+faststart',
-            '-f', 'mp4',
-            'pipe:1'
-        ]);
+    ffmpeg.stdout.pipe(writeStream);
+    ffmpeg.stderr.on('data', d => console.error(d.toString()));
 
-        ffmpeg.stdout.pipe(writeStream);
-        ffmpeg.stderr.on('data', d => console.error(d.toString()));
+    const writeFrame = (buf) => new Promise((resolve, reject) => {
+        ffmpeg.stdin.write(buf, err => (err ? reject(err) : resolve()));
+    });
 
-        const writeFrame = (buf) => new Promise((resolve, reject) => {
-            ffmpeg.stdin.write(buf, err => (err ? reject(err) : resolve()));
-        });
+    // center and scale calculation
+    const { maxX, minX, maxY, minY, maxZ, minZ } = findBoundaries(framesX, framesY, framesZ)
 
-        // center and scale calculation
-        const {maxX,minX,maxY,minY,maxZ,minZ} = findBoundaries(framesX,framesY,framesZ)
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const centerZ = (minZ + maxZ) / 2;
 
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const centerZ = (minZ + maxZ) / 2;
-
-        const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
-        const baseScale = (Math.min(width, heightPx) / 2 - 50) / maxDim;
-        const angle = Math.PI / 6;
-        const maxSize = Math.max(0.5,1.5 - maxZ * 0.05);
-        // let velocities = view === "velocity" ? [] : null;
-        for (let t = (view === "velocity" ? 1 : 0); t < framesX.length; t++) {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, width, heightPx);
-            // let frameVel = [];
-            for (let p = 0; p < framesX[t].length; p++) {
-                const x = framesX[t][p] - centerX;
-                const y = framesY[t][p] - centerY;
-                const z = framesZ[t][p] - centerZ;
-                const minSize = maxSize * 0.2;
-                const denom = Math.max(minSize, 1 - z * 0.05);
-                const scale = 1 / denom;
-                const screenX = (x - y) * Math.cos(angle) * baseScale + width / 2;
-                const screenY = (x + y) * Math.sin(angle) * baseScale - z * baseScale + heightPx / 2;
+    const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+    const baseScale = (Math.min(width, heightPx) / 2 - 50) / maxDim;
+    const angle = Math.PI / 6;
+    const maxSize = Math.max(0.5, 1.5 - maxZ * 0.05);
+    // let velocities = view === "velocity" ? [] : null;
+    // if view is velocity, start at index 1
+    for (let t = (view === "velocity" ? 1 : 0); t < framesX.length; t++) {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, width, heightPx);
+        // let frameVel = [];
+        for (let p = 0; p < framesX[t].length; p++) {
+            const x = framesX[t][p] - centerX;
+            const y = framesY[t][p] - centerY;
+            const z = framesZ[t][p] - centerZ;
+            const minSize = maxSize * 0.2;
+            const denom = Math.max(minSize, 1 - z * 0.05);
+            const scale = 1 / denom;
+            const screenX = (x - y) * Math.cos(angle) * baseScale + width / 2;
+            const screenY = (x + y) * Math.sin(angle) * baseScale - z * baseScale + heightPx / 2;
 
 
-                const radius = 2 * scale;
-                if (view === "depth") {
-                    const zNorm = (z - minZ) / (maxZ - minZ); // normalize 0–1
-                    const r = Math.floor(255 * (1 - zNorm));
-                    const g = Math.floor(255 * zNorm);
-                    const b = 255;
-                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                }
-                else if (view === "velocity") {
-                    const dx = framesX[t][p] - framesX[t - 1][p];
-                    const dy = framesY[t][p] - framesY[t - 1][p];
-                    const dz = framesZ[t][p] - framesZ[t - 1][p];
-                    const speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                    const normSpeed = speed / 5; // or dynamic max speed
-                    const r = Math.floor(255 * Math.min(1, normSpeed));
-                    const b = Math.floor(255 * Math.min(1, 1 - normSpeed));
-                    const g = 50;
-                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-
-                    // if (velocities) frameVel.push(speed);
-                }
-                else {
-                    const base = 100; // minimum brightness (dark grey)
-                    const brightness = Math.min(255, Math.max(base, 150 + z * 10));
-                    ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
-                }
-
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
-                ctx.fill();
+            const radius = 2 * scale;
+            if (view === "depth") {
+                const zNorm = (z - minZ) / (maxZ - minZ); // normalize 0–1
+                const r = Math.floor(255 * (1 - zNorm));
+                const g = Math.floor(255 * zNorm);
+                const b = 255;
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
             }
-            // if (view === "velocity") {
-            //     velocities.push(frameVel);
-            // }
+            else if (view === "velocity") {
+                // retreive previous frames
+                const dx = framesX[t][p] - framesX[t - 1][p];
+                const dy = framesY[t][p] - framesY[t - 1][p];
+                const dz = framesZ[t][p] - framesZ[t - 1][p];
+                const speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-            const buf = canvas.toBuffer('image/png');
-            await writeFrame(buf);
+                const normSpeed = Math.min(speed / 5, 1); // normalize and clamp to 0-1
+
+                // Brightness scales with speed — dark red to bright red
+                const brightness = Math.floor(50 + 205 * normSpeed); // [50–255] range
+                ctx.fillStyle = `rgb(${brightness}, 0, 0)`; // Red only
+
+                // const r = Math.floor(255 * Math.min(1, normSpeed));
+                // const b = Math.floor(255 * Math.min(1, 1 - normSpeed));
+                // const g = 50;
+                // ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                // if (velocities) frameVel.push(speed);
+            }
+            else {
+                const base = 100; // minimum brightness (dark grey)
+                const brightness = Math.min(255, Math.max(base, 150 + z * 10));
+                ctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+            }
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
+            ctx.fill();
         }
+        // if (view === "velocity") {
+        //     velocities.push(frameVel);
+        // }
 
-        ffmpeg.stdin.end();
+        const buf = canvas.toBuffer('image/png');
+        await writeFrame(buf);
+    }
 
-        return new Promise((resolve, reject) => {
-            ffmpeg.on('close', (code) => {
-                if (code === 0) resolve();
-                else reject(new Error(`ffmpeg exited with code ${code}`));
-            });
+    ffmpeg.stdin.end();
+
+    return new Promise((resolve, reject) => {
+        ffmpeg.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`ffmpeg exited with code ${code}`));
         });
-    }
+    });
+}
 
 
-    module.exports = {
-        falling_snow,
-        cellula_automata,
-        render_video
-    }
+module.exports = {
+    falling_snow,
+    cellula_automata,
+    render_video
+}

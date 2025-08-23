@@ -14,38 +14,46 @@ const generateAccessToken = (username) => {
    return jwt.sign(username, tokenSecret, { expiresIn: "30m" });
 };
 
+// Chatgpt
 // Middleware to verify a token and respond with user information
-const authenticateToken = (req, res, next) => {
-   // We are using Bearer auth.  The token is in the cookie
-   const token = req.cookies.authToken;
+function authenticateToken(req, res, next) {
+   const token = req.cookies?.authToken;
+
+   // differentiate between api calls or page 
+   const expectsJson =
+      req.xhr ||
+      req.headers.accept?.includes('application/json') ||
+      req.path.startsWith('/api') ||
+      req.headers['content-type'] === 'application/json';
+
    if (!token) {
-      console.log("JSON web token missing.");
-      return res.redirect('/user/login?error=no_token');
+      console.log('JSON web token missing.');
+      if (expectsJson) {
+         return res.status(401).json({ error: 'Please log in!' });
+      } else {
+         return res.redirect('/user/login?error=no_token');
+      }
    }
 
-   // Check that the token is valid
    try {
       const user = jwt.verify(token, tokenSecret);
 
-      console.log(
-         `authToken verified for user: ${user.username} at URL ${req.url}`
-      );
-
-      // Add user info to the request for the next handler
+      console.log(`authToken verified for user: ${user.username} at ${req.url}`);
       req.user = user;
       next();
    } catch (err) {
-      console.log(
-         `JWT verification failed at URL ${req.url}`,
-         err.name,
-         err.message
-      );
-      if (err.name === 'TokenExpiredError') {
-         return res.redirect('/user/login?error=token_expired');
+      console.warn(`JWT verification failed at ${req.url}:`, err.name, err.message);
+
+      const errorType =
+         err.name === 'TokenExpiredError' ? 'token_expired' : 'invalid_token';
+
+      if (expectsJson) {
+         return res.status(401).json({ error: errorType });
+      } else {
+         return res.redirect(`/user/login?error=${errorType}`);
       }
-      return res.redirect('/user/login?error=invalid_token');
    }
-};
+}
 
 
 module.exports = { generateAccessToken, authenticateToken };
