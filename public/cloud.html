@@ -26,8 +26,8 @@
       </div>
 
       <div class="row">
-        <label for="wind_speed">Wind Speed:</label>
-        <input type="number" name="wind_speed" id="wind_speed" value="5">
+        <label for="wind_speed">Wind Speed (50m/s Max):</label>
+        <input type="number" name="wind_speed" id="wind_speed" value="5" min="0" max="50">
       </div>
 
       <div class="row">
@@ -40,13 +40,13 @@
         </select>
       </div>
       <div class="row">
-        <label for="min_neighbour">Minimum Neighbour (To Survive):</label>
-        <input type="number" name="min_neighbour" id="min_neighbour" value="3" required>
+        <label for="min_neighbour">Minimum Neighbour/s (To Survive):</label>
+        <input type="number" name="min_neighbour" id="min_neighbour" value="3" min="0" max="8" required>
       </div>
 
       <div class="row">
-        <label for="max_neighbour">Maximum Neighbour (To Survive):</label>
-        <input type="number" name="max_neighbour" id="max_neighbour" value="8" required>
+        <label for="max_neighbour">Maximum Neighbour/s (To Survive):</label>
+        <input type="number" name="max_neighbour" id="max_neighbour" value="8" min="0" max="8" required>
       </div>
       <div class="row">
         Initial State (Binary Only):

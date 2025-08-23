@@ -26,7 +26,7 @@
       <div class="row">
         Steps: <input type="number" name="steps" value="50">
         Height: <input type="number" name="height" value="10">
-        Wind Speed: <input type="number" name="wind_speed" value="5">
+        Wind Speed (50m/s Maximum): <input type="number" name="wind_speed" value="5" min="0" max="50">
         Wind Direction: <label for="wind_dir">Wind Direction:</label>
         <select name="wind_dir" id="wind_dir">
           <option value="north">North</option>
@@ -34,8 +34,8 @@
           <option value="east">East</option>
           <option value="west">West</option>
         </select>
-        Min Neighbour: <input type="number" name="min_neighbour" value="3">
-        Max Neighbour: <input type="number" name="max_neighbour" value="8">
+        Min Neighbour: <input type="number" name="min_neighbour" value="3" min="0" max="8">
+        Max Neighbour: <input type="number" name="max_neighbour" value="8" min="0" max="8">
       </div>
 
       <div>Initial State (Binary Only):</div>
