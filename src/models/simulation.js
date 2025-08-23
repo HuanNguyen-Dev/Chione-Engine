@@ -175,7 +175,7 @@ function calculate_windspeed_factor(wind_speed) {
     return max_factor * 1 / (1 + Math.exp(-(wind_speed - 10)));
 }
 
-function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
+function calculate_particle_drift(wind_speed) {
     const air_density = 1.225; // kg/m^3
     const drag_coeff = 0.6;
     const particle_area = 0.0001; // m^2 
@@ -184,14 +184,19 @@ function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_w
     const max_speed = 50;
     const drag_force = 0.5 * air_density * velocity * velocity * drag_coeff * particle_area;
 
+    // f = ma
     const accel = drag_force / mass;
     // displacement = 1/2 a t^2 + v t --> v = 0, t = 1
     const scale_factor = 0.01 + Math.min(velocity / max_speed, 1) * 0.1;
     const base_delta = 0.1 + Math.random();
     const max_delta = 3; // max movement per timestep
-    const delta = Math.min(base_delta + (accel / 2) * scale_factor, max_delta);
+    return Math.min(base_delta + (accel / 2) * scale_factor, max_delta);;
+}
 
-    let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, velocity);
+function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
+    const delta = calculate_particle_drift(wind_speed);
+
+    let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
     let random_walks_x = [];
     let random_walks_y = [];
     let random_walks_z = [];
