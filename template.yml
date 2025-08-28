@@ -1,0 +1,11 @@
+Description: >
+  Deploy EC2 instance using an existing Launch Template and Security Group.
+
+Resources:
+
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: lt-0c01d7d6c396fbd88 
+        Version: '$Default'              
