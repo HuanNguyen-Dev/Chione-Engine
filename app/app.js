@@ -32,7 +32,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../public')));
 /** For Cross origin resource sharing with cookies:
  * const cors = require('cors');
 
@@ -41,10 +41,10 @@ app.use(cors({
   credentials: true                          // important for cookies
 }));
  */
-const tasksRouter = require('./src/routes/tasks');
-const simulationRouter = require('./src/routes/simulation');
-const userRouter = require('./src/routes/user');
-const indexRouter = require('./src/routes/index');
+const tasksRouter = require('../src/routes/tasks');
+const simulationRouter = require('../src/routes/simulation');
+const userRouter = require('../src/routes/user');
+const indexRouter = require('../src/routes/index');
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 app.use(express.json());
