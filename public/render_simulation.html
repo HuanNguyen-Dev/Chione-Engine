@@ -6,14 +6,6 @@
   <title>Cloud Simulation</title>
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
   <link rel="stylesheet" href="/styles/styles.css" />
-  <style>
-    #three {
-      width: 100%;
-      height: 600px;
-      border: 1px solid #222;
-      margin-top: 12px;
-    }
-  </style>
 </head>
 
 <body>
@@ -42,28 +34,29 @@
       <table id="table"></table>
       <button type="button" onclick="add_row()">Add Row</button>
       <button type="button" onclick="add_col()">Add Column</button>
+
+
+      <div class="row">
+        <label><input type="radio" name="view" value="velocity"> View Velocity</label>
+        <label><input type="radio" name="view" value="depth"> View Depth</label>
+        <label><input type="radio" name="view" value="default" checked> Default View</label>
+        <div id="randomInit">
+          <div class="row">
+            <label for="size">Randomly Initialise (max 50×50):</label>
+            <input type="number" name="size" id="size" min="1" max="50" required>
+          </div>
+          <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
+          <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
+        </div>
+        <button type="submit">Run Simulation</button>
+        <button type="button" id="playPauseBtn">Pause</button>
+      </div>
     </form>
   </div>
-  <div class="row">
-    <label><input type="radio" name="view" value="velocity"> View Velocity</label>
-    <label><input type="radio" name="view" value="depth"> View Depth</label>
-    <label><input type="radio" name="view" value="default" checked> Default View</label>
-    <div id="randomInit">
-      <div class="row">
-        <label for="size">Randomly Initialise (max 50×50):</label>
-        <input type="number" name="size" id="size" min="1" max="50" required>
-      </div>
-      <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
-      <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
-    </div>
-    <button type="submit">Run Simulation</button>
-    <button type="button" id="playPauseBtn">Pause</button>
-  </div>
-  </form>
   <div id="three"></div>
   <script>
     const id = new URLSearchParams(window.location.search).get('id');
-    function go_home(){
+    function go_home() {
       window.location.href = `/?id=${id}`;
     };
   </script>

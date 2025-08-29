@@ -156,7 +156,7 @@ scene.add(axes);
 // // Handle window resizing to keep aspect ratio correct
 function resize() {
     const w = host.clientWidth || window.innerWidth;
-    const h = host.clientHeight || 600;
+    const h = host.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();

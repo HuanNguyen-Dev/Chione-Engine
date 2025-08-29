@@ -1,11 +1,30 @@
-Description: >
-  Automated deployment for Cloud Simulation with docker on ec2
+Description: Launch EC2 instance that pulls and runs a container from ECR using docker compose
+
+Parameters:
+
+  EcrImageUri:
+    Type: String
+    Description: Full URI of your ECR image (e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app:latest)
 
 Resources:
 
-  MyEC2Instance:
+  EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: lt-024c4f50b6fec6a93
-        Version: '2'              
+      InstanceType: t3.micro
+      KeyName: CAB432-N11596708-Huan-Nguyen
+      SubnetId: subnet-075811427d5564cf9
+      SecurityGroupIds:
+        - sg-032bd1ff8cf77dbb9
+      IamInstanceProfile: CAB432-Instance-Role
+      ImageId: ami-0ec57629d1f5a3e27
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install docker -y
+          service docker start
+          usermod -a -G docker ec2-user
+          aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          docker pull ${EcrImageUri}
+          docker run -d -p 80:80 ${EcrImageUri}
