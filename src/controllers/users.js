@@ -13,10 +13,10 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.getUserCookieInfo = async (req, res) => {
-    if (req.user.username) {
-        return res.json({ username: req.user.username });
+    if (req.user.username && req.user.id) {
+        return res.json({ username: req.user.username, id: req.user.id });
     }
-    else return res.status(404).json({error: "Missing authentication cookies!"})
+    else return res.status(404).json({ error: "Missing authentication cookies!" })
 }
 
 exports.login = async (req, res) => {
@@ -24,7 +24,10 @@ exports.login = async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
     try {
         const user = await User.verifyUser(username, password);
-        const authToken = generateAccessToken({ username });
+        const authToken = generateAccessToken({
+            username: user.username,
+            id: user.id
+        });
         res.cookie('authToken', authToken, {
             httpOnly: true,
             secure: false,         // Set to true in production (HTTPS)
@@ -77,7 +80,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.showDeletePage = async (req, res) => {
     try {
-        res.sendFile(path.join(__dirname, '..','..','public', 'option.html'));
+        res.sendFile(path.join(__dirname, '..', '..', 'public', 'option.html'));
     } catch (err) {
         console.error("Error loading delete page:", err);
         res.status(500).send('Server error');
@@ -85,9 +88,9 @@ exports.showDeletePage = async (req, res) => {
 };
 
 exports.showRegisterPage = (req, res) => {
-    res.sendFile(path.join(__dirname, '..','..','public', 'register.html'));
+    res.sendFile(path.join(__dirname, '..', '..', 'public', 'register.html'));
 };
 
 exports.showLoginPage = (req, res) => {
-    res.sendFile(path.join(__dirname, '..', '..','public', 'login.html'));
+    res.sendFile(path.join(__dirname, '..', '..', 'public', 'login.html'));
 };

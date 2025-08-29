@@ -1,5 +1,5 @@
 Description: >
-  Deploy EC2 instance using an existing Launch Template and Security Group.
+  Automated deployment for Cloud Simulation with docker on ec2
 
 Resources:
 
@@ -7,5 +7,5 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       LaunchTemplate:
-        LaunchTemplateId: lt-0c01d7d6c396fbd88 
-        Version: '$Default'              
+        LaunchTemplateId: lt-024c4f50b6fec6a93
+        Version: '2'              

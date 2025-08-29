@@ -53,8 +53,11 @@
             if (user) {
                 // OR: Display specific fields
                 userInfoDiv.innerHTML = `
-                    <h1><strong>Welcome ${user.username}, To Bon's Cloud Simulation:</strong></h1>
-                `;
+                    <h1><strong>Welcome ${user.username}, To Bon's Cloud Simulation:</strong></h1>`;
+                // if user exists but no id in params yet
+                if ( user.id &&(!id || !Number(id))){
+                   window.location.href = `/?id=${user.id}`; 
+                }
             } else {
                 if (!user && id) window.location.href = `/`;
                 userInfoDiv.innerHTML = `
@@ -113,7 +116,7 @@
                 });
 
                 if (res.ok) {
-                    window.location.href = `/simulation/3d_simulation`;
+                    window.location.href = `/simulation/3d_simulation/?id=${id}`;
                 } else {
                     const err = await res.json();
                     alert('Access denied: ' + err.error);

@@ -4,9 +4,6 @@ import { OrbitControls } from '/js/OrbitControls_fixed.js';
 // For better particles visually
 const alphaMap = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/circle.png');
 
-document.getElementById("home").addEventListener("click", () => {
-    window.location.href = `/?id=${id}`;
-});
 const form = document.getElementById('simulation_form');
 const table = document.getElementById('table');
 const pathSegments = window.location.pathname.split('/');

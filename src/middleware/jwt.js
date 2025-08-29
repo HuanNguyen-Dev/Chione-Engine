@@ -10,8 +10,8 @@ const tokenSecret =
    "e9aae26be08551392be664d620fb422350a30349899fc254a0f37bfa1b945e36ff20d25b12025e1067f9b69e8b8f2ef0f767f6fff6279e5755668bf4bae88588";
 
 // Create a token with username embedded, setting the validity period.
-const generateAccessToken = (username) => {
-   return jwt.sign(username, tokenSecret, { expiresIn: "30m" });
+const generateAccessToken = (payload) => {
+   return jwt.sign(payload, tokenSecret, { expiresIn: "30m" });
 };
 
 // Chatgpt
@@ -38,7 +38,7 @@ function authenticateToken(req, res, next) {
    try {
       const user = jwt.verify(token, tokenSecret);
 
-      console.log(`authToken verified for user: ${user.username} at ${req.url}`);
+      console.log(`authToken verified for user: ${user.id}: ${user.username} at ${req.url}`);
       req.user = user;
       next();
    } catch (err) {

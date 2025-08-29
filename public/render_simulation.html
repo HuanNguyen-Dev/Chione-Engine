@@ -61,6 +61,12 @@
   </div>
   </form>
   <div id="three"></div>
+  <script>
+    const id = new URLSearchParams(window.location.search).get('id');
+    function go_home(){
+      window.location.href = `/?id=${id}`;
+    };
+  </script>
   <script type="module" src="/js/render_simulation.js" defer></script>
 </body>
 
