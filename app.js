@@ -31,7 +31,7 @@
 // docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:prac_3_base
 
 // starting up the stack (dir relative to terminal)
-// aws cloudformation create-stack --stack-name n11596708-simulation-assessment1 --template-body file://template.yml
+// aws cloudformation create-stack --stack-name n11596708-simulation-assignment1 --template-body file://template.yml --tags Key=qut-username,Value=n11596708@qut.edu.au Key=purpose,Value=assignment1  
 //
 const express = require('express');
 const path = require('path');
