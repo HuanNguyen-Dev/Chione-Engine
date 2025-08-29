@@ -11,7 +11,7 @@ Resources:
       SecurityGroupIds:
         - sg-032bd1ff8cf77dbb9
       IamInstanceProfile: CAB432-Instance-Role
-      ImageId: ami-09e4c2e0d9418a07f
+      ImageId: ami-0e3f481f786defee9
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
@@ -28,11 +28,6 @@ Resources:
             echo "Waiting for Docker..."
             sleep 5
           done
-
-          while [ ! -f /home/ubuntu/Cab432/docker-compose.yml ]; do
-            echo "Waiting for docker-compose.yml..."
-            sleep 5
-          done
-
-          cd /home/ubuntu/Cab432
+          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+          cd /home/ubuntu
           sudo -u ubuntu docker compose up --build
