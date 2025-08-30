@@ -295,6 +295,10 @@
         return;
       }
       const randomState = retreive_initial_state();
+      if (!randomState || calculate_number_particles(randomState) <= 0) {
+        messageDiv.textContent = 'Invalid parameters!';
+        return;
+      }
       const formData = readInitializationVariables(randomState);
 
       const video = await fetchSimulationVideo(formData);
@@ -312,6 +316,10 @@
           parseInt(cell.querySelector('input').value, 10)
         )
       );
+      if (!initial_state || calculate_number_particles(initial_state) <= 0) {
+        messageDiv.textContent = 'Invalid parameters!';
+        return;
+      }
       //  initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour 
       // create fetch response based on user input
       const formData = readInitializationVariables(initial_state);
