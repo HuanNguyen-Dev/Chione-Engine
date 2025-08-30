@@ -1,8 +1,6 @@
 const { spawn } = require('child_process');
 const { createCanvas } = require('canvas');
 
-// scp -r -i "C:\Users\hnguy\.ssh\CAB432-N11596708-Huan-Nguyen.pem" ubuntu@ec2-16-176-20-87.ap-southeast-2.compute.amazonaws.com:/home/ubuntu/aws "C:\Users\hnguy\OneDrive - Queensland University of Technology\Desktop\uni\3rd year\cab432"
-// const vector = require('./vector') // import vector class
 function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
     let cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     // remove configurations that are dead, otherwise it will perform random walks on particles at (0,0,0)
@@ -110,7 +108,6 @@ function initialise_state(initial_state, region_height) {
     const region_width = initial_state[0].length;
     const region_length = initial_state.length;
     const region_area = region_length * region_width;
-    if (region_area < 10) throw new Error("Minimum region size must be greater than 10!") // so clouds dont stay and will die
 
     // time evolution array for every particle in the system
     const initial_x = new Array(num_particles).fill(0);

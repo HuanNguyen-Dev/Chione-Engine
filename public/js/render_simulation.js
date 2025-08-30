@@ -55,7 +55,7 @@ function buildPayload(formData, initialState) {
 
 // Send the simulation payload to backend and get result JSON
 async function fetchSimulation(payload) {
-    const res = await fetch('/simulation/falling_snow_calculation', {
+    const res = await fetch('/simulation/falling-snow-calculation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

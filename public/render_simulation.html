@@ -90,7 +90,7 @@
     }
 
     async function getSystemCoords(formData) {
-      const res = await fetch('/simulation/falling_snow_calculation', {
+      const res = await fetch('/simulation/falling-snow-calculation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

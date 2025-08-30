@@ -120,7 +120,7 @@
     }
 
     async function getSystemCoords(formData) {
-      const res = await fetch('/simulation/falling_snow_calculation', {
+      const res = await fetch('/simulation/falling-snow-calculation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -243,7 +243,7 @@
     }
 
     async function fetchSimulationVideo(formData) {
-      const res = await fetch('/simulation/falling_snow_video', {
+      const res = await fetch('/simulation/simulation-snowfall-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -254,7 +254,7 @@
     async function downloadSimulationVideo(formData) {
       messageDiv.textContent = '';
       try {
-        const res = await fetch('/simulation/save_falling_snow_video', {
+        const res = await fetch('/simulation/save-snowfall-simulation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
