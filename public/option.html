@@ -20,9 +20,12 @@
             <button type="submit">Change Password</button>
             <div id="update_password" style="color: red; margin-top: 10px;"></div>
         </form>
-        <button type="button" onclick="delete_user()">Delete Account</button>
+        <button type="button" onclick="logout()">Logout</button>
         <button type="button" onclick="go_home()">Go Back Home</button>
-        <div id="delete_user" style="color: red; margin-top: 10px;"></div>
+        <div style="margin-top: 40px;">
+            <button type="button" onclick="delete_user()">Delete Account</button>
+            <div id="delete_user" style="color: red; margin-top: 10px;"></div>
+        </div>
     </div>
     <script>
 
@@ -35,7 +38,40 @@
         function go_home() {
             window.location.href = `/?id=${id}`;
         }
-        
+
+        async function logout() {
+            try {
+                const response = await fetch(`/user/${id}/logout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: "include",
+                    body: JSON.stringify({ reason: 'Ending session' })
+                })
+                if (!response.ok) {
+                    let error = { error: 'Failed to logout' };
+                    try {
+                        error = await response.json();
+                    } catch (parseErr) {
+                        error.error = response.statusText || 'Unknown error';
+                    }
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = 'Error: ' + (`${error.error}` || 'Failed to logout');
+                    return;
+                }
+
+                messageDiv.style.color = 'green';
+                messageDiv.textContent = 'Account deleted. Redirecting to home..';
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 200);
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Network error: ' + (error || '');
+                return;
+            }
+        }
+
         async function delete_user() {
             try {
                 const response = await fetch(`/user/${id}/delete`, {

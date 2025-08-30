@@ -1,7 +1,7 @@
 const User = require('../models/user');
-const { generateAccessToken } = require('../middleware/jwt')
+const { generateAccessToken, isTokenBlacklisted, blacklistToken, tokenSecret } = require('../middleware/jwt')
 const path = require('path');
-
+const jwt = require("jsonwebtoken");
 
 exports.getAllUsers = async (req, res) => {
     try {
@@ -13,8 +13,41 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.getUserCookieInfo = async (req, res) => {
-    if (req.user.username && req.user.id) {
-        return res.json({ username: req.user.username, id: req.user.id });
+    try {
+        // req user set via jwt middleware
+        const username = req.user.username;
+        const id = req.user.id;
+        if (username && id) {
+            const exists = await User.checkUserExists(req.user.username);
+            if (!exists) return res.status(404).json({ error: "User does not exist" })
+
+            console.log(`authToken verified for user (${id}): ${username} at ${req.url}`);
+            // Return the user info
+            return res.json({ username: req.user.username, id: req.user.id });
+        }
+        else return res.status(404).json({ error: "Missing authentication cookies!" })
+
+    } catch (err) {
+        console.warn(`Error in getUserCookieInfo: ${err.message}`);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.logoutUser = async (req, res) => {
+    const username = req.user.username;
+    const id = req.user.id;
+    if (username && id) {
+        const exists = await User.checkUserExists(req.user.username);
+        if (!exists) return res.status(404).json({ error: "User does not exist" })
+
+        // Blacklists token
+        const token = req.cookies.authToken;
+        const decoded = jwt.verify(token, tokenSecret);
+        await blacklistToken(decoded.jti);
+        // Clear the token from the cookies (logout the user)
+        res.clearCookie('authToken', { httpOnly: true, secure: false });
+
+        return res.status(200).json({ message: "User had logged out" });
     }
     else return res.status(404).json({ error: "Missing authentication cookies!" })
 }
@@ -24,7 +57,7 @@ exports.login = async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Please enter in a username and password!' });
     try {
         const user = await User.verifyUser(username, password);
-        const authToken = generateAccessToken({
+        const authToken = await generateAccessToken({
             username: user.username,
             id: user.id
         });
@@ -32,9 +65,8 @@ exports.login = async (req, res) => {
             httpOnly: true,
             secure: false,         // Set to true in production (HTTPS)
             sameSite: 'Strict',
-            maxAge: 60 * 60 * 1000 // 1 hour
+            maxAge: 60 * 30 * 1000 // 30minutes
         });
-
         return res.status(200).json(user);
     } catch (err) {
         return res.status(400).json({ error: err.message });
@@ -70,7 +102,20 @@ exports.updateUserPassword = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
-        const results = await User.remove(req.params.id);
+
+        const token = req.cookies.authToken;
+        const decoded = jwt.verify(token, tokenSecret);
+        // Get user ID from the URL (route is /user/:id/delete)
+        const userId = req.params.id;
+        // Check if the decoded token's user ID matches the one in the URL
+        if (Number(decoded.id) !== Number(userId)) {
+            return res.status(403).json({ error: 'You are not authorized to delete this user' });
+        }
+        await blacklistToken(decoded.jti);
+        // Clear the token from the cookies (logout the user)
+        res.clearCookie('authToken', { httpOnly: true, secure: false });
+
+        const results = await User.remove(userId);
         if (!results.deleted) return res.status(404).json({ error: 'User ID not found!' });
         return res.status(200).json({ message: 'User has been deleted!' });
     } catch (err) {
