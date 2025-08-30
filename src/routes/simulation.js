@@ -5,7 +5,7 @@ const { authenticateToken } = require('../middleware/jwt');
 const {falling_snow,cellular_automata,falling_snow_video, showRenderPage,} = require('../controllers/simulation');
 
 router.post('/falling_snow', falling_snow);
-router.post('/cellula_automata', cellular_automata);
+// router.post('/cellula_automata', cellular_automata);
 router.get("/cloud_simulation", (req, res) => {
    res.sendFile(path.join(__dirname,"..", '..',"public", "cloud.html"));
 });

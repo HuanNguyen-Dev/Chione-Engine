@@ -26,16 +26,16 @@ exports.falling_snow = (req, res) => {
     }
 }
 
-exports.cellular_automata = (req, res) => {
-    const { initial_state, min_neighbour, max_neighbour, timeframe } = req.body;
-    if (!initial_state || !min_neighbour || !max_neighbour || !timeframe) return res.status(500).json({ error: "Please enter in a valid value" })
-    try {
-        const cellula_automata_configs = cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe)
-        return res.status(200).json({ data: cellula_automata_configs })
-    } catch (error) {
-        return res.status(400).json({ error: `Something went wrong: ${error.message}` })
-    }
-}
+// exports.cellular_automata = (req, res) => {
+//     const { initial_state, min_neighbour, max_neighbour, timeframe } = req.body;
+//     if (!initial_state || !min_neighbour || !max_neighbour || !timeframe) return res.status(500).json({ error: "Please enter in a valid value" })
+//     try {
+//         const cellula_automata_configs = cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe)
+//         return res.status(200).json({ data: cellula_automata_configs })
+//     } catch (error) {
+//         return res.status(400).json({ error: `Something went wrong: ${error.message}` })
+//     }
+// }
 
 // chatgpt
 exports.falling_snow_video = async (req, res) => {
