@@ -32,7 +32,12 @@
 
 // starting up the stack (dir relative to terminal)
 // aws cloudformation create-stack --stack-name n11596708-simulation-assignment1 --template-body file://template.yml --tags Key=qut-username,Value=n11596708@qut.edu.au Key=purpose,Value=assignment1  
-//
+// aws cloudformation create-stack \
+  // --stack-name n11596708-simulation-assignment1 \
+  // --template-body file://template.yml \
+  // --parameters ParameterKey=EcrImageUri,ParameterValue=901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:latest \
+  // --tags Key=qut-username,Value=n11596708@qut.edu.au Key=purpose,Value=assignment1  \
+
 const express = require('express');
 const path = require('path');
 const app = express();

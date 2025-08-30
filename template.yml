@@ -29,5 +29,6 @@ Resources:
             sleep 5
           done
           aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+          sudo docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:latest
           cd /home/ubuntu
-          sudo -u ubuntu docker compose up --build
+          sudo -u ubuntu docker compose up -d
