@@ -377,6 +377,19 @@ function findBoundaries(x, y, z) {
     }
     return { maxX, minX, maxY, minY, maxZ, minZ };
 }
+
+async function save_render_video(params, writeStream) {
+    try {
+        await render_video(params, writeStream);
+        console.log('Video saved to disk!');
+        return true;
+    } catch (err) {
+        console.error('Error rendering video:', err);
+        throw err; // optional: rethrow if you want upstream error handling
+    }
+}
+
+
 // CHATGPT
 async function render_video(params, writeStream) {
     let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour, view = "default" } = params;
@@ -502,5 +515,6 @@ async function render_video(params, writeStream) {
 module.exports = {
     falling_snow,
     cellula_automata,
-    render_video
+    render_video,
+    save_render_video
 }

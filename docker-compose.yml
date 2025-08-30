@@ -12,6 +12,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./videos:/videos
 
   db:
     image: mariadb:10.11

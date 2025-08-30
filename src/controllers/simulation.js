@@ -1,8 +1,9 @@
-const { falling_snow,render_video } = require('../models/simulation')
+const { falling_snow, render_video, save_render_video } = require('../models/simulation')
 const path = require('path');
+const fs = require('fs');
 
 exports.falling_snow = (req, res) => {
-    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour} = req.body;
+    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = req.body;
     if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(500).json({ error: "Please enter in a valid value" })
     try {
         if (!wind_speed) wind_speed = 0;
@@ -45,10 +46,26 @@ exports.falling_snow_video = async (req, res) => {
     }
 };
 
+exports.save_falling_snow_video = async (req, res) => {
+    try {
+        const outputPath = path.join('/videos','output.mp4');
+        console.log('Saving video to:', outputPath);
+        // Create a writable stream to that file
+        const writeStream = fs.createWriteStream(outputPath);
+
+        // Await the rendering process
+        await save_render_video(req.body, writeStream);
+        // Respond with success
+        res.status(200).json({ message: 'Video saved successfully', path: outputPath });
+    } catch (err) {
+        console.error('Error saving video:', err);
+        res.status(500).json({ error: 'Failed to render and save video' });
+    }
+};
 
 exports.showRenderPage = async (req, res) => {
     try {
-        res.sendFile(path.join(__dirname, '..','..','public', 'render_simulation.html'));
+        res.sendFile(path.join(__dirname, '..', '..', 'public', 'render_simulation.html'));
     } catch (err) {
         console.error("Error loading delete page:", err);
         res.status(500).send('Server error');

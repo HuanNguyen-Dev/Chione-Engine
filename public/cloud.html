@@ -65,6 +65,7 @@
         <input type="radio" id="none" name="view" value="default">
         <label for="none">Default View</label><br>
       </div>
+      <button type="submit">Run Simulation</button>
       <div id="randomInit">
         <div class="row">
           <label for="size">Randomly Initialise (max 50×50):</label>
@@ -73,7 +74,8 @@
         <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
       </div>
       <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
-      <button type="submit">Run Simulation</button>
+      <button type="button" onclick="save_simulation()">Download Simulation</button>
+      <button type="button" onclick="save_form_data()">Download Form Data</button>
     </form>
   </div>
 
@@ -89,6 +91,64 @@
     const id = new URLSearchParams(window.location.search).get('id');
     function go_home() {
       window.location.href = id ? `/?id=${id}` : `/`;
+    }
+
+    function calculate_number_particles(state) {
+      return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
+    }
+    function retreive_initial_state() {
+      const messageDiv = document.getElementById('randomInitDiv');
+      messageDiv.textContent = '';
+      const dim = Number(randomSizeInput.value);
+      let initial_state;
+      // check if user started simulation via random state or table
+      if (dim > 0) {
+        initial_state = Array.from({ length: dim }, () =>
+          Array.from({ length: dim }, () => Math.random() > 0.5 ? 1 : 0)
+        );
+      }
+      else {
+        initial_state = Array.from(table.rows).map(row =>
+          Array.from(row.cells).map(cell =>
+            parseInt(cell.querySelector('input').value, 10)
+          )
+        );
+      }
+      if (calculate_number_particles(initial_state) <= 0) return null;
+      return initial_state;
+    }
+
+    function save_form_data() {
+      const initial_state = retreive_initial_state();
+      const formData = readInitializationVariables(initial_state);
+      const messageDiv = document.getElementById('randomInitDiv');
+      messageDiv.textContent = '';
+      if (!initial_state) {
+        messageDiv.textContent = 'Please enter in an initial state!'
+        return;
+      }
+      const obj = {};
+      for (const [key, value] of Object.entries(formData)) {
+        obj[key] = value;
+      }
+      const json = JSON.stringify(obj, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      console.log(url);
+      a.download = 'form-data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function save_simulation() {
+      const initial_state = retreive_initial_state();
+      const formData = readInitializationVariables(initial_state);
+      const video = await downloadSimulationVideo(formData);
     }
 
     function add_row(cols = table.rows[0]?.cells.length || 3) {
@@ -146,6 +206,25 @@
       return res;
     }
 
+    async function downloadSimulationVideo(formData) {
+      const messageDiv = document.getElementById('randomInitDiv');
+      messageDiv.textContent = '';
+      try {
+        const res = await fetch('/simulation/save_falling_snow_video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (!res.ok) {
+          messageDiv.style.color = 'red';
+          messageDiv.textContent = 'Please start the simulation first!';
+        }
+      } catch (errror) {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'An error occured please try again another time';
+      }
+    }
+
     async function getUser() {
       try {
         const userData = await fetch(`/user/me`, {
@@ -173,17 +252,11 @@
         messageDiv.textContent = 'You must log in to access this feature!';
         return;
       }
-      const dim = Number(randomSizeInput.value);
-      if (dim < 1 || dim > 50) {
-        messageDiv.textContent = "Size must be between 1 and 50.";
-        return;
-      }
-      const randomState = Array.from({ length: dim }, () =>
-        Array.from({ length: dim }, () => Math.random() > 0.5 ? 1 : 0)
-      );
+      const randomState = retreive_initial_state();
       const formData = readInitializationVariables(randomState);
-      const res = await fetchSimulationVideo(formData);
-      const blob = await res.blob();
+
+      const video = await fetchSimulationVideo(formData);
+      const blob = await video.blob();
       const url = URL.createObjectURL(blob);
       document.getElementById("video").src = url;
     }
@@ -200,7 +273,6 @@
       //  initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour 
       // create fetch response based on user input
       const formData = readInitializationVariables(initial_state);
-
       const res = await fetchSimulationVideo(formData);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
