@@ -50,14 +50,12 @@ app.use(cors({
   credentials: true                          // important for cookies
 }));
  */
-const tasksRouter = require('./src/routes/tasks');
 const simulationRouter = require('./src/routes/simulation');
 const userRouter = require('./src/routes/user');
 const indexRouter = require('./src/routes/index');
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 app.use(express.json());
-app.use('/tasks', tasksRouter);
 app.use('/simulation', simulationRouter);
 app.use('/user', userRouter);
 app.use('/', indexRouter)

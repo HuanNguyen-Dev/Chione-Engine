@@ -1,6 +1,4 @@
-const { falling_snow, cellula_automata,render_video } = require('../models/simulation')
-const { spawn } = require('child_process')
-const { createCanvas } = require('canvas')
+const { falling_snow,render_video } = require('../models/simulation')
 const path = require('path');
 
 exports.falling_snow = (req, res) => {
