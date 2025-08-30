@@ -4,7 +4,7 @@ const fs = require('fs');
 
 exports.falling_snow = (req, res) => {
     let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = req.body;
-    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(500).json({ error: "Please enter in a valid value" })
+    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(422).json({ error: "Please enter in a valid value" })
     try {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;
@@ -27,7 +27,7 @@ exports.falling_snow = (req, res) => {
 
 // exports.cellular_automata = (req, res) => {
 //     const { initial_state, min_neighbour, max_neighbour, timeframe } = req.body;
-//     if (!initial_state || !min_neighbour || !max_neighbour || !timeframe) return res.status(500).json({ error: "Please enter in a valid value" })
+//     if (!initial_state || !min_neighbour || !max_neighbour || !timeframe) return res.status(422).json({ error: "Please enter in a valid value" })
 //     try {
 //         const cellula_automata_configs = cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe)
 //         return res.status(200).json({ data: cellula_automata_configs })

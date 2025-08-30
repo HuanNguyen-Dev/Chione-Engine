@@ -76,6 +76,7 @@
       <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
       <button type="button" onclick="save_simulation()">Download Simulation</button>
       <button type="button" onclick="save_form_data()">Download Form Data</button>
+      <button type="button" onclick="downloadSystemCoords()">Download System Coordinates</button>
     </form>
   </div>
 
@@ -92,12 +93,12 @@
     function go_home() {
       window.location.href = id ? `/?id=${id}` : `/`;
     }
+    const messageDiv = document.getElementById('randomInitDiv');
 
     function calculate_number_particles(state) {
       return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
     }
     function retreive_initial_state() {
-      const messageDiv = document.getElementById('randomInitDiv');
       messageDiv.textContent = '';
       const dim = Number(randomSizeInput.value);
       let initial_state;
@@ -118,10 +119,54 @@
       return initial_state;
     }
 
+    async function getSystemCoords(formData) {
+      const res = await fetch('/simulation/falling_snow_calculation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      return res;
+    }
+    // downloads the coordinates for every particle in the system
+    async function downloadSystemCoords() {
+      try {
+        // generate form to pass into endpoint to retreive coordinates
+        const initial_state = retreive_initial_state();
+        const formData = readInitializationVariables(initial_state);
+        const res = await getSystemCoords(formData);
+        // validation of payload
+        if (!res.ok) {
+          let error = { error: 'Invalid parameters!' };
+          try {
+            error = await res.json();
+          } catch (parseErr) {
+            error.error = res.statusText || 'Unknown error';
+          }
+          messageDiv.style.color = 'red';
+          messageDiv.textContent = 'Error: ' + (`${error.error}` || 'Invalid parameters!');
+          return;
+        }
+        // download the json file
+        const data = await res.json();
+        const jsonString = JSON.stringify(data, null, 2); // pretty print
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'coordinate-history.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        messageDiv.textContent = `An error occured: ${err.message ? err.message : 'Internal server error!'}`;
+      }
+    }
+
+
     function save_form_data() {
       const initial_state = retreive_initial_state();
       const formData = readInitializationVariables(initial_state);
-      const messageDiv = document.getElementById('randomInitDiv');
       messageDiv.textContent = '';
       if (!initial_state) {
         messageDiv.textContent = 'Please enter in an initial state!'
@@ -207,7 +252,6 @@
     }
 
     async function downloadSimulationVideo(formData) {
-      const messageDiv = document.getElementById('randomInitDiv');
       messageDiv.textContent = '';
       try {
         const res = await fetch('/simulation/save_falling_snow_video', {
@@ -243,8 +287,6 @@
     initialise_table(4, 4);
 
     async function randomInitialization() {
-
-      const messageDiv = document.getElementById('randomInitDiv');
       messageDiv.textContent = '';
       const isUser = await getUser();
       if (!isUser) {
