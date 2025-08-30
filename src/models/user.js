@@ -2,13 +2,6 @@ const pool = require('../db');
 const bcrypt = require('bcrypt')
 // const { generateAccessToken } = require('../middleware/jwt')
 
-exports.getAll = async () => {
-    const conn = await pool.getConnection();
-    const rows = await conn.query('SELECT * FROM tasks');
-    conn.release();
-    return rows;
-};
-
 exports.checkUserExists = async (username) => {
     let conn;
     try {
