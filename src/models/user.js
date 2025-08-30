@@ -87,7 +87,7 @@ exports.update = async (username, old_password, new_password) => {
 exports.remove = async (id) => {
     let conn;
     try {
-        const conn = await pool.getConnection();
+        conn = await pool.getConnection();
         const result = await conn.query('DELETE FROM users WHERE id = ?', [id]);
         return { deleted: result.affectedRows > 0 };
     } catch (err) {
@@ -97,5 +97,62 @@ exports.remove = async (id) => {
         if (conn) {
             conn.release();
         }
+    }
+};
+
+exports.postSimulation = async (system_coordinates) => {
+    const { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z } = system_coordinates;
+    const query = `
+    INSERT INTO particle_coordinates (
+        system_coordinate_history_x,
+        system_coordinate_history_y,
+        system_coordinate_history_z
+    ) VALUES (?, ?, ?)
+    `;
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await db.execute(query, [
+            JSON.stringify(system_coordinate_history_x),
+            JSON.stringify(system_coordinate_history_y),
+            JSON.stringify(system_coordinate_history_z)
+        ]);
+        return result.insertId;
+    } catch (err) {
+        throw new Error("An error has occured while saving system coordinates: " + err.message);
+    } finally {
+        if (conn) {
+            conn.release();
+        }
+    }
+}
+
+exports.getSimulation = async (particleId) => {
+    const query = `
+    SELECT
+      system_coordinate_history_x,
+      system_coordinate_history_y,
+      system_coordinate_history_z
+    FROM particle_coordinates
+    WHERE simulation_id = ?
+  `;
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const [rows] = await conn.execute(query, [particleId]);
+
+        if (rows.length === 0) {
+            throw new Error("Particle not found");
+        }
+        const particle = rows[0];
+        return {
+            system_coordinate_history_x: JSON.parse(particle.system_coordinate_history_x),
+            system_coordinate_history_y: JSON.parse(particle.system_coordinate_history_y),
+            system_coordinate_history_z: JSON.parse(particle.system_coordinate_history_z)
+        };
+    } catch (err) {
+        throw new Error("Error retrieving particle coordinates: " + err.message);
+    } finally {
+        if (conn) conn.release();
     }
 };

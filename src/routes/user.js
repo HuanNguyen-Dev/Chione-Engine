@@ -19,4 +19,7 @@ router.post('/register',controller.createUser);
 router.get('/register', controller.showRegisterPage);
 
 router.get('/me', authenticateToken, controller.getUserCookieInfo);
+
+router.post('/:id/simulation'.authenticateToken,controller.saveSimulation); // req auth
+router.get('/:id/simulation'.authenticateToken,controller.getSimulation); // req auth
 module.exports = router;

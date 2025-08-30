@@ -123,6 +123,31 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+exports.saveSimulation = async (req, res) => {
+    const system_coordinates = req.body;
+    try {
+        const res = await User.postSimulation(system_coordinates);
+        if (res) {
+            return res.status(200).json({ message: "Coordinates have been stored!" })
+        }
+    }catch(err){
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.getSimulation = async (req, res) => {
+    const user_id = req.body;
+    try {
+        const res = await User.getSimulation(user_id);
+        if (res) {
+            return res.status(200).json({ message: "Coordinates have been stored!" })
+        }
+    }catch(err){
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+
 exports.showDeletePage = async (req, res) => {
     try {
         res.sendFile(path.join(__dirname, '..', '..', 'public', 'option.html'));
