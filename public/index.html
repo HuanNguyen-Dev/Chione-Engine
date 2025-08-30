@@ -102,21 +102,21 @@
         }
 
         function go_simulation() {
-            window.location.href = id ? `/simulation/cloud_simulation/?id=${id}` : `/simulation/cloud_simulation`;
+            window.location.href = id ? `/simulation/falling_snow_page/?id=${id}` : `/simulation/falling_snow_page`;
         }
 
         async function go_3d_simulation() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             try {
-                const res = await fetch(`/simulation/3d_simulation`, {
+                const res = await fetch(`/simulation/3d_simulation_page`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: "include",
                 });
 
                 if (res.ok) {
-                    window.location.href = `/simulation/3d_simulation/?id=${id}`;
+                    window.location.href = `/simulation/3d_simulation_page/?id=${id}`;
                 } else {
                     const err = await res.json();
                     alert('Access denied: ' + err.error);
