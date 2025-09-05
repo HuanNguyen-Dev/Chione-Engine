@@ -13,15 +13,11 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     }
 
     const batches = [];
-    // const batch_particle_ids = [];
-    // let particle_counter = 0;
     let max_steps = 0;
 
     // for each configuration, compute the random walks of each state / cloud config
     for (let i = 0; i < cloud_configurations.length; i++) {
         let { initial_x, initial_y, initial_z, num_particles } = initialise_state(cloud_configurations[i], region_height);
-        // const ids = Array.from({ length: num_particles }, () => particle_counter++);
-        // batch_particle_ids.push(ids);
 
         // generate the time evolution arrays for the particles through random walks
         // random walks returns in format {random walks for x,y,z} with each coordinate structured as:
@@ -46,7 +42,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
         const landed_particles_map = new Map();
         // if (is_empty_configuration(batches[i]))continue;
         const { random_walks_x, random_walks_y, random_walks_z } = batches[i];
-        // const ids = batch_particle_ids[i];
         const local_steps_for_config = random_walks_x.length;
 
         // add random walks of each config into the global system coords history
@@ -61,7 +56,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
                 const x = random_walks_x[step][particle];
                 const y = random_walks_y[step][particle];
                 const z = random_walks_z[step][particle];
-                // const particle_id = ids[particle];
 
                 system_coordinate_history_x[global_step].push(x);
                 system_coordinate_history_y[global_step].push(y);
