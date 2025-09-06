@@ -3,7 +3,7 @@ const { createCanvas } = require('canvas');
 const {allParticlesGrounded, isEmptyConfiguration, 
     calculateNumberParticles, calculateAvgPos, 
     meetsSurvivalCondition,calculateParticleDrift,
-    calculateWindspeedFactor} = require("../../utils/simulation")
+    calculateWindspeedFactor} = require("../utils/simulation")
 
 function fallingSnow(initialState, steps, regionHeight, windSpeed, windDir, minNeighbour, maxNeighbour) {
     let cloudConfigs = calculateCloudConfig(initialState, minNeighbour, maxNeighbour, steps);

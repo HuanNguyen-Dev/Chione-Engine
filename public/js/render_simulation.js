@@ -132,7 +132,7 @@ let usingPointerLock = false;
 // Keyboard event listeners
 document.addEventListener('keydown', (event) => {
     keysPressed[event.code] = true;
-    if (event.code === 'Tab') {
+    if (event.code === 'KeyE') {
         event.preventDefault(); // prevent browser focus change
         usingPointerLock = !usingPointerLock;
 
