@@ -14,18 +14,55 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
 
     const batches = [];
     let max_steps = 0;
-
+    let prev_avg_pos = 0;
     // for each configuration, compute the random walks of each state / cloud config
     for (let i = 0; i < cloud_configurations.length; i++) {
-        let { initial_x, initial_y, initial_z, num_particles } = initialise_state(cloud_configurations[i], region_height);
+        let { initial_x, initial_y, initial_z, num_particles, average_pos } = initialise_state(cloud_configurations[i], region_height);
+        if (i === 0) {
+            prev_avg_pos = average_pos;
+        } else {
+            // Drift the points for this configuration
+            const delta = calculate_particle_drift(wind_speed, num_particles);
+            const { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
+            let offset_x = (prev_avg_pos.x - average_pos.x)
+            let offset_y = (prev_avg_pos.y - average_pos.y)
+            for (let k = 0; k < num_particles; k++) {
+                let displacement_prob = Math.random();
+                let base_x = initial_x[k] + offset_x;
+                let base_y = initial_y[k] + offset_y;
+                // left
+                if (displacement_prob < threshold_1) {
+                    initial_x[k] = initial_x[k] + offset_x - delta;
+                    initial_y[k] = base_y;
+                }
+                // right
+                else if (displacement_prob < threshold_2) {
+                    initial_x[k] = initial_x[k] + offset_x + delta;
+                    initial_y[k] = base_y;
+                }
+                // down
+                else if (displacement_prob < threshold_3) {
+                    initial_y[k] = initial_y[k] + offset_y - delta;
+                    initial_x[k] = base_x;
+                }
+                // up
+                else {
+                    initial_y[k] = initial_y[k] + offset_y + delta;
+                    initial_x[k] = base_x;
+                }
+            }
+            let new_avg_pos = {
+                x: calculate_avg_pos(initial_x),
+                y: calculate_avg_pos(initial_y)
+            }
+            prev_avg_pos = new_avg_pos;
+        }
 
-        // generate the time evolution arrays for the particles through random walks
-        // random walks returns in format {random walks for x,y,z} with each coordinate structured as:
-        // [all particles at time n, number of particles]
+        // generate the time evolution arrays for the particles through random walks in format[all particles at time n, number of particles]
         const walk = random_walks(num_particles, initial_x, initial_y, initial_z, wind_speed, wind_dir);
         batches.push(walk);
-        // as each config produces a different walk, we want to find out the maximum number of steps required to reach the ground
-        // to find the upper bound
+
+        // upper bound
         if (walk.random_walks_x.length > max_steps) {
             max_steps = walk.random_walks_x.length;
         }
@@ -81,7 +118,14 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };
 }
 
-
+function calculate_avg_pos(array) {
+    if (array.length === 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < array.length; i++) {
+        sum += array[i]
+    }
+    return sum / array.length;
+}
 
 function cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe) {
     let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
@@ -102,28 +146,39 @@ function initialise_state(initial_state, region_height) {
     const region_width = initial_state[0].length;
     const region_length = initial_state.length;
     const region_area = region_length * region_width;
-
+    const max_height = region_height;
+    const min_height = region_height - (region_height / 4)
     // time evolution array for every particle in the system
     const initial_x = new Array(num_particles).fill(0);
     const initial_y = new Array(num_particles).fill(0);
-    const initial_z = new Array(num_particles).fill(region_height);
+    const initial_z = new Array(num_particles).fill(0).map(() =>
+        Math.random() * (max_height - min_height) + min_height
+    );
 
     // keep track of particles
     let particle_index = 0;
 
+    // keep track of the center of the configuration
+    let sum_x = 0, sum_y = 0;
     // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
     // [[t0p0]...[t2p3]...[tNpN]]
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
             // record coord of particle, serperated into x and y arrays
             if (initial_state[i][j] === 1) {
+                sum_x += j;
+                sum_y += i;
                 initial_x[particle_index] = j;
                 initial_y[particle_index] = i;
                 particle_index++;
             }
         }
     }
-    return { initial_x, initial_y, initial_z, num_particles };
+    const average_pos = {
+        x: sum_x / particle_index,
+        y: sum_y / particle_index,
+    }
+    return { initial_x, initial_y, initial_z, num_particles, average_pos };
 }
 
 function calculate_thresholds(wind_dir, wind_speed) {
@@ -166,21 +221,26 @@ function calculate_windspeed_factor(wind_speed) {
     return max_factor * 1 / (1 + Math.exp(-(wind_speed - 10)));
 }
 
-function calculate_particle_drift(wind_speed) {
+function calculate_particle_drift(wind_speed, num_particles = 1) {
     const air_density = 1.225; // kg/m^3
     const drag_coeff = 0.6;
     const particle_area = 0.0001; // m^2 
     const mass = 0.000002; // 2 mg, small snowflake
     const velocity = wind_speed;
     const max_speed = 50;
-    const drag_force = 0.5 * air_density * velocity * velocity * drag_coeff * particle_area;
+
+    const total_area = particle_area * num_particles;
+    const total_mass = mass * num_particles;
+
+    const drag_force = 0.5 * air_density * velocity * velocity * drag_coeff * total_area;
 
     // f = ma
-    const accel = drag_force / mass;
+    const accel = drag_force / total_mass;
     // displacement = 1/2 a t^2 + v t --> v = 0, t = 1
     const scale_factor = 0.01 + Math.min(velocity / max_speed, 1) * 0.1;
     const base_delta = 0.1 + Math.random();
-    const max_delta = 3; // max movement per timestep
+    let max_delta = 3; // max movement per timestep
+    if (num_particles > 1) max_delta = max_delta / 3 // for clouds
     return Math.min(base_delta + (accel / 2) * scale_factor, max_delta);;
 }
 

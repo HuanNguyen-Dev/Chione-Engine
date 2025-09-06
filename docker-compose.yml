@@ -1,6 +1,7 @@
 services:
   backend:
-    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:latest
+    # image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11596708-assignment-1:latest
+    build: .
     ports:
       - "3000:3000"
     environment:
