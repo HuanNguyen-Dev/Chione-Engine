@@ -40,20 +40,28 @@
         <label><input type="radio" name="view" value="velocity"> View Velocity</label>
         <label><input type="radio" name="view" value="depth"> View Depth</label>
         <label><input type="radio" name="view" value="default" checked> Default View</label>
-        <div id="randomInit">
-          <div class="row">
-            <label for="size">Randomly Initialise (max 50×50):</label>
-            <input type="number" name="size" id="size" min="1" max="50">
-          </div>
-          <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
-        </div>
-        <button type="submit">Run Simulation</button>
-        <button type="button" id="playPauseBtn">Pause</button>
-        <button type="button" onclick="save_form_data()">Download Form Data</button>
-        <button type="button" onclick="downloadSystemCoords()">Download System Coordinates</button>
       </div>
-    </form>
-    <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
+      <button type="submit">Run Simulation</button>
+      <div id="randomInit">
+        <div class="row">
+          <label for="size">Randomly Initialise (max 50×50):</label>
+          <input type="number" name="size" id="size" min="1" max="50">
+        </div>
+        <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
+      </div>
+      <button type="button" id="playPauseBtn">Pause</button>
+      <button type="button" onclick="save_form_data()">Download Form Data</button>
+      <button type="button" onclick="downloadSystemCoords()">Download System Coordinates</button>
+  </div>
+  </form>
+  <div id="randomInitDiv" style="color: red; margin-top: 10px;"></div>
+  <div id="controls_info">
+    Tab to change perspective<br>
+    WASD to move<br>
+    Shift to go down<br>
+    Space to go up<br>
+    ESC to leave
+  </div>
   </div>
   <div id="three"></div>
   <script>

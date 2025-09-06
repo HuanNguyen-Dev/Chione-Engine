@@ -1,5 +1,6 @@
 // <!-- CHATGPT GENERATED --> //
 import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+import { PointerLockControls } from '/js/PointerLockControls_fixed.js';
 import { OrbitControls } from '/js/OrbitControls_fixed.js';
 // For better particles visually
 const alphaMap = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/circle.png');
@@ -143,11 +144,50 @@ scene.background = new THREE.Color(0x101014);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 5000);
 camera.position.set(40, 30, 40);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+// Orbit Controls
+const orbitControls = new OrbitControls(camera, renderer.domElement);
+orbitControls.enableDamping = true;
+orbitControls.enabled = true; // Start with orbit enabled
 
+
+// PointerLockControls
+const pointerControls = new PointerLockControls(camera, document.body);
+scene.add(pointerControls.getObject());
+pointerControls.enabled = false; // Start disabled
+
+// Movement variables
+const moveSpeed = 35; // units per second
+let velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+
+const keysPressed = {};
+let usingPointerLock = false;
+// Keyboard event listeners
+document.addEventListener('keydown', (event) => {
+    keysPressed[event.code] = true;
+    if (event.code === 'Tab') {
+        event.preventDefault(); // prevent browser focus change
+        usingPointerLock = !usingPointerLock;
+
+        if (usingPointerLock) {
+            orbitControls.enabled = false;
+            pointerControls.lock(); // will enable controls automatically
+        } else {
+            pointerControls.unlock(); // unlock and go back to orbit
+            orbitControls.enabled = true;
+        }
+    }
+
+});
+
+document.addEventListener('keyup', (event) => {
+    keysPressed[event.code] = false;
+});
+
+
+const clock = new THREE.Clock();
 const grid = new THREE.GridHelper(200, 20, 0x333333, 0x222222);
-grid.position.y = -0.01;
+grid.position.y = -8.5;
 scene.add(grid);
 
 const axes = new THREE.AxesHelper(30);
@@ -340,7 +380,29 @@ function updateFrame(k) {
 // Animation loop
 function tick() {
     requestAnimationFrame(tick);
-    controls.update();
+    const delta = clock.getDelta();
+    direction.set(0, 0, 0);
+    if (pointerControls.isLocked && usingPointerLock) {
+        direction.set(0, 0, 0);
+
+        if (keysPressed['KeyW']) direction.z -= 1;
+        if (keysPressed['KeyS']) direction.z += 1;
+        if (keysPressed['KeyA']) direction.x -= 1;
+        if (keysPressed['KeyD']) direction.x += 1;
+        if (keysPressed['Space']) direction.y += 1;
+        if (keysPressed['ShiftLeft'] || keysPressed['ShiftRight']) direction.y -= 1;
+
+        if (direction.lengthSq() > 0) {
+            direction.normalize();
+            direction.applyQuaternion(pointerControls.getObject().quaternion);
+
+            velocity.copy(direction).multiplyScalar(moveSpeed * delta);
+            pointerControls.getObject().position.add(velocity);
+        }
+    } else {
+        console.log("Herererere");
+        orbitControls.update();
+    }
     if (playing && framesX) {
         if (frameCounter === 0) {
             updateFrame(frameIndex);
