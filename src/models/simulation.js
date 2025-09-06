@@ -1,5 +1,9 @@
 const { spawn } = require('child_process');
 const { createCanvas } = require('canvas');
+const {allParticlesGrounded, isEmptyConfiguration, 
+    calculateNumberParticles, calculateAvgPos, 
+    meetsSurvivalCondition,calculateParticleDrift,
+    calculateWindspeedFactor} = require("../../utils/simulation")
 
 function fallingSnow(initialState, steps, regionHeight, windSpeed, windDir, minNeighbour, maxNeighbour) {
     let cloudConfigs = calculateCloudConfig(initialState, minNeighbour, maxNeighbour, steps);
@@ -113,7 +117,7 @@ function displace1D(initialX, initialY, index, xOffset, yOffset, delta, threshol
         newY = baseY - delta;
     } else {
         // up
-        newY[index] = baseY + delta;
+        newY = baseY + delta;
     }
     initialX[index] = newX;
     initialY[index] = newY;
@@ -143,23 +147,12 @@ function displace2D(xArray, yArray, timeStep, index, xPrev, yPrev, delta, thresh
     yArray[timeStep][index] = newY;
 }
 
-function calculateAvgPos(array) {
-    if (array.length === 0) return 0;
-    let sum = 0;
-    for (let i = 0; i < array.length; i++) {
-        sum += array[i]
-    }
-    return sum / array.length;
-}
 
 function cellularAutomata(initialState, minNeighbour, maxNeighbour, timeframe) {
     let cellula_automata_config = calculateCloudConfig(initialState, minNeighbour, maxNeighbour, timeframe);
     return cellula_automata_config;
 }
 
-function calculateNumberParticles(state) {
-    return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
-}
 
 // initialises the starting layer (t = 0 or column 0) --> moving from initial state into a 1d particle array at step = 0
 function initialiseState(initialState, regionHeight) {
@@ -238,35 +231,6 @@ function calculateThresholds(windDir, windSpeed) {
     return { threshold_1, threshold_2, threshold_3 };
 }
 
-function calculateWindspeedFactor(wind_speed) {
-    const max_factor = 0.65
-    // since its probabilty, we want to apply the sigmoid function to keep between 0 and 1
-    return max_factor * 1 / (1 + Math.exp(-(wind_speed - 10)));
-}
-
-function calculateParticleDrift(windSpeed, numParticles = 1) {
-    const airDensity = 1.225; // kg/m^3
-    const dragCoeff = 0.6;
-    const particleArea = 0.0001; // m^2 
-    const mass = 0.000002; // 2 mg, small snowflake
-    const velocity = windSpeed;
-    const maxSpeed = 50;
-
-    const totalArea = particleArea * numParticles;
-    const totalMass = mass * numParticles;
-
-    const dragForce = 0.5 * airDensity * velocity * velocity * dragCoeff * totalArea;
-
-    // f = ma
-    const accel = dragForce / totalMass;
-    // displacement = 1/2 a t^2 + v t --> v = 0, t = 1
-    const scaleFactor = 0.01 + Math.min(velocity / maxSpeed, 1) * 0.1;
-    const baseDelta = 0.1 + Math.random();
-    let maxDelta = 3; // max movement per timestep
-    if (numParticles > 1) maxDelta = maxDelta / 3 // for clouds
-    return Math.min(baseDelta + (accel / 2) * scaleFactor, maxDelta);;
-}
-
 function randomWalks(numParticles, initialWalksX, initialWalksY, initialWalksZ, windSpeed, windDir) {
     const delta = calculateParticleDrift(windSpeed);
 
@@ -308,14 +272,6 @@ function randomWalks(numParticles, initialWalksX, initialWalksY, initialWalksZ, 
         }
     }
     return { randomWalksX, randomWalksY, randomWalksZ }
-}
-
-function allParticlesGrounded(array) {
-    return array.every(z => z <= 0);
-}
-
-function isEmptyConfiguration(array) {
-    return array.every(sub_array => sub_array.every(i => i === 0));
 }
 
 function calculateNextConfig(state, neighbourDir, minNeighbour, maxNeighbour) {
@@ -399,34 +355,6 @@ function findNumNeighbours(initialState, neighbourDir, i, j) {
     return liveNeighbours;
 }
 
-function meetsSurvivalCondition(liveNeighbours, minNeighbours, maxNeighbours) {
-    return (liveNeighbours >= minNeighbours) && (liveNeighbours <= maxNeighbours)
-        && (liveNeighbours != maxNeighbours - minNeighbours)
-}
-
-function findBoundaries(x, y, z) {
-    let maxX = -Infinity, minX = Infinity;
-    let maxY = -Infinity, minY = Infinity;
-    let maxZ = -Infinity, minZ = Infinity;
-
-    for (let frame = 0; frame < x.length; frame++) {
-        const xs = x[frame];
-        const ys = y[frame];
-        const zs = z[frame];
-
-        for (let i = 0; i < xs.length; i++) {
-            if (xs[i] > maxX) maxX = xs[i];
-            if (xs[i] < minX) minX = xs[i];
-
-            if (ys[i] > maxY) maxY = ys[i];
-            if (ys[i] < minY) minY = ys[i];
-
-            if (zs[i] > maxZ) maxZ = zs[i];
-            if (zs[i] < minZ) minZ = zs[i];
-        }
-    }
-    return { maxX, minX, maxY, minY, maxZ, minZ };
-}
 
 async function saveRenderVideo(params, writeStream) {
     try {
