@@ -7,47 +7,17 @@ const alphaMap = new THREE.TextureLoader().load('https://threejs.org/examples/te
 
 const form = document.getElementById('simulation_form');
 const table = document.getElementById('table');
-const pathSegments = window.location.pathname.split('/');
-
-// Add a new row of inputs to the table, with a default number of columns (or match first row)
-window.addRow = function (cols = table.rows[0]?.cells.length || 4) {
-    const row = table.insertRow();
-    for (let i = 0; i < cols; i++) {
-        const cell = row.insertCell();
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.value = 0;
-        input.max = 1;
-        input.min = 0;
-        input.step = 1;
-        cell.appendChild(input);
-    }
-}
-
-// Add a new column of inputs to every existing row in the table
-window.addCol = function () {
-    for (let i = 0; i < table.rows.length; i++) {
-        const cell = table.rows[i].insertCell();
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.value = 0;
-        input.max = 1;
-        input.min = 0;
-        input.step = 1;
-        cell.appendChild(input);
-    }
-}
 
 // Helper to build payload object for backend from form data and initial state table
 function buildPayload(formData, initialState) {
     return {
-        initial_state: initialState,
+        initialState: initialState,
         steps: Number(formData.steps),
         height: Number(formData.height),
-        wind_speed: Number(formData.wind_speed),
-        wind_dir: formData.wind_dir,
-        min_neighbour: Number(formData.min_neighbour),
-        max_neighbour: Number(formData.max_neighbour),
+        windSpeed: Number(formData.windSpeed),
+        windDir: formData.windDir,
+        minNeighbour: Number(formData.minNeighbour),
+        maxNeighbour: Number(formData.maxNeighbour),
     };
 }
 
@@ -93,9 +63,9 @@ window.randomInitialization = async function () {
     }
 
     // Step 4: Same as form handler logic
-    framesX = data.system_coordinate_history_x;
-    framesY = data.system_coordinate_history_y;
-    framesZ = data.system_coordinate_history_z;
+    framesX = data.sysCoordHistoryX;
+    framesY = data.sysCoordHistoryY;
+    framesZ = data.sysCoordHistoryZ;
 
     if (!framesX || !framesY || !framesZ || !framesX.length) {
         console.error('Bad frames data', data);
@@ -413,12 +383,12 @@ form.addEventListener('submit', async (e) => {
     const formData = Object.fromEntries(new FormData(form));
 
     // initial_state from table
-    const initial_state = [...table.rows].map(row =>
+    const initialState = [...table.rows].map(row =>
         [...row.cells].map(cell => parseInt(cell.querySelector('input').value) || 0)
     );
 
     // sanitize numbers
-    const payload = buildPayload(formData, initial_state);
+    const payload = buildPayload(formData, initialState);
 
     const { res, data } = await fetchSimulation(payload);
     if (!res.ok) {
@@ -426,10 +396,10 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    // Expecting data: { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z }
-    framesX = data.system_coordinate_history_x;
-    framesY = data.system_coordinate_history_y;
-    framesZ = data.system_coordinate_history_z;
+    // Expecting data: { sysCoordHistoryX, sysCoordHistoryY, sysCoordHistoryZ }
+    framesX = data.sysCoordHistoryX;
+    framesY = data.sysCoordHistoryY;
+    framesZ = data.sysCoordHistoryZ;
 
     if (!framesX || !framesY || !framesZ || !framesX.length) {
         console.error('Bad frames data', data);

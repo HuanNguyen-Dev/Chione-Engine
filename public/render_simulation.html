@@ -10,7 +10,7 @@
 
 <body>
   <header>
-    <button type="button" id="home" onclick="go_home()">Home Page</button>
+    <button type="button" id="home" onclick="home()">Home Page</button>
   </header>
   <div class="center_container">
     <h2>Cloud Simulation</h2>
@@ -18,16 +18,16 @@
       <div class="row">
         Steps: <input type="number" name="steps" value="50">
         Height: <input type="number" name="height" value="10">
-        Wind Speed (50m/s Maximum): <input type="number" name="wind_speed" value="5" min="0" max="50">
-        Wind Direction: <label for="wind_dir">Wind Direction:</label>
-        <select name="wind_dir" id="wind_dir">
+        Wind Speed (50m/s Maximum): <input type="number" name="windSpeed" value="5" min="0" max="50">
+        Wind Direction: <label for="windDir">Wind Direction:</label>
+        <select name="windDir" id="windDir">
           <option value="north">North</option>
           <option value="south">South</option>
           <option value="east">East</option>
           <option value="west">West</option>
         </select>
-        Min Neighbour: <input type="number" name="min_neighbour" value="3" min="0" max="8">
-        Max Neighbour: <input type="number" name="max_neighbour" value="8" min="0" max="8">
+        Min Neighbour: <input type="number" name="minNeighbour" value="3" min="0" max="8">
+        Max Neighbour: <input type="number" name="maxNeighbour" value="8" min="0" max="8">
       </div>
 
       <div>Initial State (Binary Only):</div>
@@ -70,31 +70,61 @@
     const randomSizeInput = document.querySelector('#randomInit input[name="size"]');
     const messageDiv = document.getElementById('randomInitDiv');
     const id = new URLSearchParams(window.location.search).get('id');
-    function go_home() {
+
+    function home() {
       window.location.href = `/?id=${id}`;
     };
+
     function calculateNumberParticles(state) {
-      return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
+      return state.flat().reduce((accumulator, curValue) => accumulator += curValue, 0)
+    }
+    // Add a new row of inputs to the table, with a default number of columns (or match first row)
+    function addRow(cols = table.rows[0]?.cells.length || 4) {
+      const row = table.insertRow();
+      for (let i = 0; i < cols; i++) {
+        const cell = row.insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        input.max = 1;
+        input.min = 0;
+        input.step = 1;
+        cell.appendChild(input);
+      }
+    }
+
+    // Add a new column of inputs to every existing row in the table
+    function addCol() {
+      for (let i = 0; i < table.rows.length; i++) {
+        const cell = table.rows[i].insertCell();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = 0;
+        input.max = 1;
+        input.min = 0;
+        input.step = 1;
+        cell.appendChild(input);
+      }
     }
     function retreiveInitialState() {
       messageDiv.textContent = '';
       const dim = Number(randomSizeInput.value);
-      let initial_state;
+      let initialState;
       // check if user started simulation via random state or table
       if (dim > 0) {
-        initial_state = Array.from({ length: dim }, () =>
+        initialState = Array.from({ length: dim }, () =>
           Array.from({ length: dim }, () => Math.random() > 0.5 ? 1 : 0)
         );
       }
       else {
-        initial_state = Array.from(table.rows).map(row =>
+        initialState = Array.from(table.rows).map(row =>
           Array.from(row.cells).map(cell =>
             parseInt(cell.querySelector('input').value, 10)
           )
         );
       }
-      if (calculateNumberParticles(initial_state) <= 0) return null;
-      return initial_state;
+      if (calculateNumberParticles(initialState) <= 0) return null;
+      return initialState;
     }
 
     async function getSystemCoords(formData) {
@@ -109,8 +139,8 @@
     async function downloadSystemCoords() {
       try {
         // generate form to pass into endpoint to retreive coordinates
-        const initial_state = retreiveInitialState();
-        const formData = readInitializationVariables(initial_state);
+        const initialState = retreiveInitialState();
+        const formData = readInitializationVariables(initialState);
         const res = await getSystemCoords(formData);
         // validation of payload
         if (!res.ok) {
@@ -143,10 +173,10 @@
 
 
     function saveFormData() {
-      const initial_state = retreiveInitialState();
-      const formData = readInitializationVariables(initial_state);
+      const initialState = retreiveInitialState();
+      const formData = readInitializationVariables(initialState);
       messageDiv.textContent = '';
-      if (!initial_state) {
+      if (!initialState) {
         messageDiv.textContent = 'Please enter in an initial state!'
         return;
       }
@@ -167,16 +197,16 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-    function readInitializationVariables(initial_state) {
+    function readInitializationVariables(initialState) {
       // turn KVP into objects
       const formData = Object.fromEntries(new FormData(form));
-      formData.initial_state = initial_state;
+      formData.initialState = initialState;
       formData.steps = Number(formData.steps);
       formData.height = Number(formData.height);
-      formData.wind_speed = Number(formData.wind_speed);
-      formData.wind_dir = formData.wind_dir;
-      formData.min_neighbour = Number(formData.min_neighbour);
-      formData.max_neighbour = Number(formData.max_neighbour);
+      formData.windSpeed = Number(formData.windSpeed);
+      formData.windDir = formData.wind_dir;
+      formData.minNeighbour = Number(formData.minNeighbour);
+      formData.maxNeighbour = Number(formData.maxNeighbour);
       return formData;
     }
 

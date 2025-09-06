@@ -3,12 +3,12 @@ const path = require('path');
 const fs = require('fs');
 
 exports.fallingSnow = (req, res) => {
-    let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = req.body;
-    if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(422).json({ error: "Please enter in a valid value" })
+    let {initialState, steps, height, windSpeed = 0, windDir = null, minNeighbour, maxNeighbour } = req.body;
+    if (!initialState || !steps || !height || !minNeighbour || !maxNeighbour) return res.status(422).json({ error: "Please enter in a valid value" })
     try {
-        if (!wind_speed) wind_speed = 0;
-        if (!wind_dir) wind_dir = null;
-        const falling_snow_coords = fallingSnow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
+        if (!windSpeed) windSpeed = 0;
+        if (!windDir) windDir = null;
+        const falling_snow_coords = fallingSnow(initialState, steps, height, windSpeed, windDir, minNeighbour, maxNeighbour);
         return res.status(200).json(falling_snow_coords)
     } catch (error) {
         return res.status(400).json({ error: `Something went wrong: ${error.message}` })
