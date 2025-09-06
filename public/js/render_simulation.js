@@ -9,11 +9,8 @@ const form = document.getElementById('simulation_form');
 const table = document.getElementById('table');
 const pathSegments = window.location.pathname.split('/');
 
-const id = pathSegments[2];
-
-
 // Add a new row of inputs to the table, with a default number of columns (or match first row)
-window.add_row = function (cols = table.rows[0]?.cells.length || 4) {
+window.addRow = function (cols = table.rows[0]?.cells.length || 4) {
     const row = table.insertRow();
     for (let i = 0; i < cols; i++) {
         const cell = row.insertCell();
@@ -28,7 +25,7 @@ window.add_row = function (cols = table.rows[0]?.cells.length || 4) {
 }
 
 // Add a new column of inputs to every existing row in the table
-window.add_col = function () {
+window.addCol = function () {
     for (let i = 0; i < table.rows.length; i++) {
         const cell = table.rows[i].insertCell();
         const input = document.createElement('input');
@@ -127,10 +124,10 @@ window.randomInitialization = async function () {
     playPauseBtn.textContent = 'Pause';
 }
 
-function initialise_table(row, col) {
-    for (let i = 0; i < row; i++) add_row(col);
+function initialiseTable(row, col) {
+    for (let i = 0; i < row; i++) addRow(col);
 }
-initialise_table(4, 4);
+initialiseTable(4, 4);
 
 // --- THREE setup ---
 const host = document.getElementById('three');
@@ -304,9 +301,6 @@ function updateFrame(k) {
     const { centerX, centerY, centerZ, scale } = getBoundsAndScale();
     tmp.scale = scale;
 
-    // const angle = Math.PI / 6; // isometric-ish
-    // const cosA = Math.cos(angle), sinA = Math.sin(angle);
-
     // For velocity coloring, we need previous frame (use same frame if k==0)
     const prev = Math.max(k - 1, 0);
     const frameN = framesX[k].length;
@@ -315,13 +309,6 @@ function updateFrame(k) {
             const x = framesX[k][i] - centerX;
             const y = framesY[k][i] - centerY;
             const z = framesZ[k][i] - centerZ;
-
-            // Isometric-ish projection into 3D world space (not screen-space):
-            // We'll place points in a 3D space where X/Z carry the “plan” and Y carries height, so OrbitControls can move around.
-            // Rotate x/y plane a bit for a nice angle.
-            // const rx = (x - y) * cosA * scale;
-            // const rz = (x + y) * sinA * scale;
-            // const ry = z * scale;
 
             positions[3 * i + 0] = x * scale;  // X stays X
             positions[3 * i + 1] = z * scale;  // Z becomes Y (height)
@@ -400,7 +387,6 @@ function tick() {
             pointerControls.getObject().position.add(velocity);
         }
     } else {
-        console.log("Herererere");
         orbitControls.update();
     }
     if (playing && framesX) {

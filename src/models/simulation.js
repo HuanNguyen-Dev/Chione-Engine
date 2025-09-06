@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const { createCanvas } = require('canvas');
 
-function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
+function fallingSnow(initial_state, steps, region_height, wind_speed, wind_dir, min_neighbour, max_neighbour) {
     let cloud_configurations = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, steps);
     // remove configurations that are dead, otherwise it will perform random walks on particles at (0,0,0)
     for (let i = 0; i < cloud_configurations.length; i++) {
@@ -22,34 +22,13 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
             prev_avg_pos = average_pos;
         } else {
             // Drift the points for this configuration
+            // initial_x, initial_y, k, offset_x, offset_y, delta, displacement_prob, thresholds
             const delta = calculate_particle_drift(wind_speed, num_particles);
-            const { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
+            const thresholds = calculate_thresholds(wind_dir, wind_speed);
             let offset_x = (prev_avg_pos.x - average_pos.x)
             let offset_y = (prev_avg_pos.y - average_pos.y)
             for (let k = 0; k < num_particles; k++) {
-                let displacement_prob = Math.random();
-                let base_x = initial_x[k] + offset_x;
-                let base_y = initial_y[k] + offset_y;
-                // left
-                if (displacement_prob < threshold_1) {
-                    initial_x[k] = initial_x[k] + offset_x - delta;
-                    initial_y[k] = base_y;
-                }
-                // right
-                else if (displacement_prob < threshold_2) {
-                    initial_x[k] = initial_x[k] + offset_x + delta;
-                    initial_y[k] = base_y;
-                }
-                // down
-                else if (displacement_prob < threshold_3) {
-                    initial_y[k] = initial_y[k] + offset_y - delta;
-                    initial_x[k] = base_x;
-                }
-                // up
-                else {
-                    initial_y[k] = initial_y[k] + offset_y + delta;
-                    initial_x[k] = base_x;
-                }
+                displace1D(initial_x, initial_y, k, offset_x, offset_y, delta, thresholds);
             }
             let new_avg_pos = {
                 x: calculate_avg_pos(initial_x),
@@ -76,8 +55,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
 
     // store each walk for each batch into the system --> note the offset required for each config as explained above
     for (let i = 0; i < batches.length; i++) {
-        const landed_particles_map = new Map();
-        // if (is_empty_configuration(batches[i]))continue;
         const { random_walks_x, random_walks_y, random_walks_z } = batches[i];
         const local_steps_for_config = random_walks_x.length;
 
@@ -105,7 +82,6 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
                 }
             }
             // last step indicate particles have hit the ground
-            // store those particles across all itimesteps of the system for continuity
             if (step === local_steps_for_config - 1) {
                 for (let future_steps = global_step; future_steps < total_steps; future_steps++) {
                     system_coordinate_history_x[future_steps].push(...random_walks_x[local_steps_for_config - 1]);
@@ -118,6 +94,55 @@ function falling_snow(initial_state, steps, region_height, wind_speed, wind_dir,
     return { system_coordinate_history_x, system_coordinate_history_y, system_coordinate_history_z };
 }
 
+function displace1D(initial_x, initial_y, index, offset_x, offset_y, delta, thresholds) {
+    const {threshold_1, threshold_2, threshold_3} = thresholds;
+    const base_x = initial_x[index] + offset_x;
+    const base_y = initial_y[index] + offset_y;
+    let displacement_prob = Math.random();
+    let new_x = base_x;
+    let new_y = base_y;
+
+    if (displacement_prob < threshold_1) {
+        // left
+        new_x = base_x - delta;
+    } else if (displacement_prob < threshold_2) {
+        // right
+        new_x = base_x + delta;
+    } else if (displacement_prob < threshold_3) {
+        // down
+        new_y = base_y - delta;
+    } else {
+        // up
+        new_y[index] = base_y + delta;
+    }
+    initial_x[index] = new_x;
+    initial_y[index] = new_y;
+}
+function displace2D(x_array, y_array, time_step, index, x_prev, y_prev, delta, thresholds) {
+    const displacement_prob = Math.random();
+    const {threshold_1, threshold_2, threshold_3} = thresholds;
+    let new_x = x_prev;
+    let new_y = y_prev;
+    // left
+    if (displacement_prob < threshold_1) {
+        new_x = x_prev - delta;
+    }
+    // right
+    else if (displacement_prob < threshold_2) {
+        new_x = x_prev + delta;
+    }
+    // down
+    else if (displacement_prob < threshold_3) {
+        new_y = y_prev - delta;
+    }
+    // up
+    else {
+        new_y = y_prev + delta;
+    }
+    x_array[time_step][index] = new_x;
+    y_array[time_step][index] = new_y;
+}
+
 function calculate_avg_pos(array) {
     if (array.length === 0) return 0;
     let sum = 0;
@@ -127,7 +152,7 @@ function calculate_avg_pos(array) {
     return sum / array.length;
 }
 
-function cellula_automata(initial_state, min_neighbour, max_neighbour, timeframe) {
+function cellularAutomata(initial_state, min_neighbour, max_neighbour, timeframe) {
     let cellula_automata_config = calculate_cloud_configurations(initial_state, min_neighbour, max_neighbour, timeframe);
     return cellula_automata_config;
 }
@@ -142,12 +167,11 @@ function initialise_state(initial_state, region_height) {
     // e.g [[1,0,1,1],
     //       1,1,1,0]]
     const num_particles = calculate_number_particles(initial_state)
-    // if (num_particles < min_number_of_particles) throw new Error("Minumum number of particles must be greater than 1.6 for it to rain!");
     const region_width = initial_state[0].length;
     const region_length = initial_state.length;
-    const region_area = region_length * region_width;
     const max_height = region_height;
     const min_height = region_height - (region_height / 4)
+
     // time evolution array for every particle in the system
     const initial_x = new Array(num_particles).fill(0);
     const initial_y = new Array(num_particles).fill(0);
@@ -161,7 +185,6 @@ function initialise_state(initial_state, region_height) {
     // keep track of the center of the configuration
     let sum_x = 0, sum_y = 0;
     // save the inital state into the first time column for each coordinate for each particle (represented by a 1)
-    // [[t0p0]...[t2p3]...[tNpN]]
     for (let i = 0; i < region_length; i++) {
         for (let j = 0; j < region_width; j++) {
             // record coord of particle, serperated into x and y arrays
@@ -247,7 +270,7 @@ function calculate_particle_drift(wind_speed, num_particles = 1) {
 function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_walks_z, wind_speed, wind_dir) {
     const delta = calculate_particle_drift(wind_speed);
 
-    let { threshold_1, threshold_2, threshold_3 } = calculate_thresholds(wind_dir, wind_speed);
+    let thresholds = calculate_thresholds(wind_dir, wind_speed);
     let random_walks_x = [];
     let random_walks_y = [];
     let random_walks_z = [];
@@ -265,9 +288,9 @@ function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_w
         random_walks_z[time_step] = [];
         let vertical_displacement = Array.from({ length: num_particles }, () => Math.random())
         for (let j = 0; j < num_particles; j++) {
-            const x_prev = random_walks_x[time_step - 1][j];
-            const y_prev = random_walks_y[time_step - 1][j];
-            const z_prev = random_walks_z[time_step - 1][j];
+            let x_prev = random_walks_x[time_step - 1][j];
+            let y_prev = random_walks_y[time_step - 1][j];
+            let z_prev = random_walks_z[time_step - 1][j];
 
             // check if certain particle has already hit the ground (z = 0)
             if (random_walks_z[time_step - 1][j] <= 0) {
@@ -277,32 +300,8 @@ function random_walks(num_particles, initial_walks_x, initial_walks_y, initial_w
                 random_walks_y[time_step][j] = y_prev;
                 continue;
             }
-            // calculating the z plane displacement of each particle 
             random_walks_z[time_step][j] = z_prev - vertical_displacement[j];
-
-            // calculating the x-y plane displacement of each particle
-            let random_displacement = Math.random();
-
-            // left
-            if (random_displacement < threshold_1) {
-                random_walks_x[time_step][j] = x_prev - delta;
-                random_walks_y[time_step][j] = y_prev;
-            }
-            // right
-            else if (random_displacement < threshold_2) {
-                random_walks_x[time_step][j] = x_prev + delta;
-                random_walks_y[time_step][j] = y_prev;
-            }
-            // down
-            else if (random_displacement < threshold_3) {
-                random_walks_y[time_step][j] = y_prev - delta;
-                random_walks_x[time_step][j] = x_prev;
-            }
-            // up
-            else {
-                random_walks_y[time_step][j] = y_prev + delta;
-                random_walks_x[time_step][j] = x_prev;
-            }
+            displace2D(random_walks_x, random_walks_y, time_step, j, x_prev, y_prev, delta, thresholds)
         }
         if (all_particles_grounded(random_walks_z[time_step])) {
             system_unstable = false;
@@ -355,8 +354,8 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
     // --> note south and east are similar but will each depend on rows and cols respectively, same with north and west
     // [0,1,2,3,4] => [4,0,1,2,3] for west
     // [0,1,2,3,4] => [1,2,3,4,0] for east
-    const north_neighbour_index = Array.from({ length: rows }, (_, row_index) => (row_index - 1 + rows) % rows); // row index: 0 -> row - 1
-    const west_neighbour_index = Array.from({ length: cols }, (_, col_index) => (col_index - 1 + cols) % cols); // col index: 0 -> col - 1
+    const north_neighbour_index = Array.from({ length: rows }, (_, row_index) => (row_index - 1 + rows) % rows);
+    const west_neighbour_index = Array.from({ length: cols }, (_, col_index) => (col_index - 1 + cols) % cols);
 
     const south_neighbour_index = Array.from({ length: rows }, (_, row_index) => (row_index + 1) % rows);
     const east_neighbour_index = Array.from({ length: cols }, (_, col_index) => (col_index + 1) % cols);
@@ -371,14 +370,14 @@ function calculate_cloud_configurations(initial_state, min_neighbour, max_neighb
 
     // store each configuration of the C.A take shape in form (configs,row,col)
     let cellula_automata_config = Array.from(Array(timeframe), () => Array.from(Array(rows), () => Array(cols).fill(0)));
-    // create temporary state 
     let tmp_state = initial_state.map(row => [...row]);
     cellula_automata_config[0] = initial_state.map(row => [...row]);
+
     for (let i = 1; i < timeframe; i++) {
         tmp_state = calculate_next_configuration(tmp_state, neighbour_dir, min_neighbour, max_neighbour);
         cellula_automata_config[i] = tmp_state.map((rows) => [...rows]);
         if (calculate_number_particles(tmp_state) === 0) {
-            // if the configuration dies out before the timeframe ends (note .slice is not inclusive of upper bound so +1 is req.)
+            // if the configuration dies out before the timeframe ends 
             if (i != timeframe - 1) return cellula_automata_config.slice(0, i + 1);
         }
     }
@@ -429,26 +428,26 @@ function findBoundaries(x, y, z) {
     return { maxX, minX, maxY, minY, maxZ, minZ };
 }
 
-async function save_render_video(params, writeStream) {
+async function saveRenderVideo(params, writeStream) {
     try {
-        await render_video(params, writeStream);
+        await renderVideo(params, writeStream);
         console.log('Video saved to disk!');
         return true;
     } catch (err) {
         console.error('Error rendering video:', err);
-        throw err; // optional: rethrow if you want upstream error handling
+        throw err; // optional
     }
 }
 
 
 // CHATGPT
-async function render_video(params, writeStream) {
+async function renderVideo(params, writeStream) {
     let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour, view = "default" } = params;
 
     if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) throw new Error("Invalid parameters");
 
     // run simulation
-    const sim = falling_snow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
+    const sim = fallingSnow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
     const framesX = sim.system_coordinate_history_x;
     const framesY = sim.system_coordinate_history_y;
     const framesZ = sim.system_coordinate_history_z;
@@ -489,12 +488,10 @@ async function render_video(params, writeStream) {
     const baseScale = (Math.min(width, heightPx) / 2 - 50) / maxDim;
     const angle = Math.PI / 6;
     const maxSize = Math.max(0.5, 1.5 - maxZ * 0.05);
-    // let velocities = view === "velocity" ? [] : null;
-    // if view is velocity, start at index 1
+
     for (let t = (view === "velocity" ? 1 : 0); t < framesX.length; t++) {
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, width, heightPx);
-        // let frameVel = [];
         for (let p = 0; p < framesX[t].length; p++) {
             const x = framesX[t][p] - centerX;
             const y = framesY[t][p] - centerY;
@@ -527,12 +524,6 @@ async function render_video(params, writeStream) {
                 const brightness = Math.floor(50 + 205 * normSpeed); // [50–255] range
                 ctx.fillStyle = `rgb(${brightness}, 0, 0)`; // Red only
 
-                // const r = Math.floor(255 * Math.min(1, normSpeed));
-                // const b = Math.floor(255 * Math.min(1, 1 - normSpeed));
-                // const g = 50;
-                // ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-
-                // if (velocities) frameVel.push(speed);
             }
             else {
                 const base = 100; // minimum brightness (dark grey)
@@ -544,10 +535,6 @@ async function render_video(params, writeStream) {
             ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
             ctx.fill();
         }
-        // if (view === "velocity") {
-        //     velocities.push(frameVel);
-        // }
-
         const buf = canvas.toBuffer('image/png');
         await writeFrame(buf);
     }
@@ -564,8 +551,8 @@ async function render_video(params, writeStream) {
 
 
 module.exports = {
-    falling_snow,
-    cellula_automata,
-    render_video,
-    save_render_video
+    fallingSnow,
+    cellularAutomata,
+    renderVideo,
+    saveRenderVideo
 }

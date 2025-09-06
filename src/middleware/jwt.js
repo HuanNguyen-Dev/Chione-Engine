@@ -22,15 +22,6 @@ const generateAccessToken = async (payload) => {
    return token;
 };
 
-// const isTokenBlacklisted = async (jti) => {
-//    return new Promise((resolve, reject) => {
-//       redis.get(jti, (err, data) => {
-//          if (err) reject(err);
-//          resolve(data === 'blacklisted');
-//       });
-//    });
-// };
-
 const isTokenBlacklisted = async (jti) => {
    const data = await redis.get(jti);
    return data === 'blacklisted';

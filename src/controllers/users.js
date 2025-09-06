@@ -1,5 +1,5 @@
 const User = require('../models/user');
-const { generateAccessToken, isTokenBlacklisted, blacklistToken, tokenSecret } = require('../middleware/jwt')
+const { generateAccessToken, blacklistToken, tokenSecret } = require('../middleware/jwt')
 const path = require('path');
 const jwt = require("jsonwebtoken");
 

@@ -32,8 +32,8 @@
 
       <div>Initial State (Binary Only):</div>
       <table id="table"></table>
-      <button type="button" onclick="add_row()">Add Row</button>
-      <button type="button" onclick="add_col()">Add Column</button>
+      <button type="button" onclick="addRow()">Add Row</button>
+      <button type="button" onclick="addCol()">Add Column</button>
 
 
       <div class="row">
@@ -50,7 +50,7 @@
         <button type="button" onclick="randomInitialization()">Randomly Initialise State</button>
       </div>
       <button type="button" id="playPauseBtn">Pause</button>
-      <button type="button" onclick="save_form_data()">Download Form Data</button>
+      <button type="button" onclick="saveFormData()">Download Form Data</button>
       <button type="button" onclick="downloadSystemCoords()">Download System Coordinates</button>
   </div>
   </form>
@@ -73,10 +73,10 @@
     function go_home() {
       window.location.href = `/?id=${id}`;
     };
-    function calculate_number_particles(state) {
+    function calculateNumberParticles(state) {
       return state.flat().reduce((accumulator, cur_value) => accumulator += cur_value, 0)
     }
-    function retreive_initial_state() {
+    function retreiveInitialState() {
       messageDiv.textContent = '';
       const dim = Number(randomSizeInput.value);
       let initial_state;
@@ -93,7 +93,7 @@
           )
         );
       }
-      if (calculate_number_particles(initial_state) <= 0) return null;
+      if (calculateNumberParticles(initial_state) <= 0) return null;
       return initial_state;
     }
 
@@ -109,7 +109,7 @@
     async function downloadSystemCoords() {
       try {
         // generate form to pass into endpoint to retreive coordinates
-        const initial_state = retreive_initial_state();
+        const initial_state = retreiveInitialState();
         const formData = readInitializationVariables(initial_state);
         const res = await getSystemCoords(formData);
         // validation of payload
@@ -142,8 +142,8 @@
     }
 
 
-    function save_form_data() {
-      const initial_state = retreive_initial_state();
+    function saveFormData() {
+      const initial_state = retreiveInitialState();
       const formData = readInitializationVariables(initial_state);
       messageDiv.textContent = '';
       if (!initial_state) {

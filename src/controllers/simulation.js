@@ -1,14 +1,14 @@
-const { falling_snow, render_video, save_render_video } = require('../models/simulation')
+const { fallingSnow, renderVideo, saveRenderVideo } = require('../models/simulation')
 const path = require('path');
 const fs = require('fs');
 
-exports.falling_snow = (req, res) => {
+exports.fallingSnow = (req, res) => {
     let { initial_state, steps, height, wind_speed = 0, wind_dir = null, min_neighbour, max_neighbour } = req.body;
     if (!initial_state || !steps || !height || !min_neighbour || !max_neighbour) return res.status(422).json({ error: "Please enter in a valid value" })
     try {
         if (!wind_speed) wind_speed = 0;
         if (!wind_dir) wind_dir = null;
-        const falling_snow_coords = falling_snow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
+        const falling_snow_coords = fallingSnow(initial_state, steps, height, wind_speed, wind_dir, min_neighbour, max_neighbour);
         return res.status(200).json(falling_snow_coords)
     } catch (error) {
         return res.status(400).json({ error: `Something went wrong: ${error.message}` })
@@ -16,16 +16,16 @@ exports.falling_snow = (req, res) => {
 }
 
 // chatgpt
-exports.falling_snow_video = async (req, res) => {
+exports.fallingSnowVideo = async (req, res) => {
     try {
-        await render_video(req.body, res);
+        await renderVideo(req.body, res);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Render failed" });
     }
 };
 
-exports.save_falling_snow_video = async (req, res) => {
+exports.saveFallingSnowVideo = async (req, res) => {
     try {
         const outputPath = path.join('/videos','output.mp4');
         console.log('Saving video to:', outputPath);
@@ -33,7 +33,7 @@ exports.save_falling_snow_video = async (req, res) => {
         const writeStream = fs.createWriteStream(outputPath);
 
         // Await the rendering process
-        await save_render_video(req.body, writeStream);
+        await saveRenderVideo(req.body, writeStream);
         // Respond with success
         res.status(200).json({ message: 'Video saved successfully', path: outputPath });
     } catch (err) {
