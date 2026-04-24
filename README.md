@@ -44,7 +44,6 @@ Chione Engine is a REST API that simulates snowfall using a combination of rando
 
 ### CPU Intensive Processing
 - Simulation rendering and video generation are CPU-heavy  
-- Load tested with sustained CPU usage above 80%  
 
 ### Infrastructure
 - Docker containerization  
